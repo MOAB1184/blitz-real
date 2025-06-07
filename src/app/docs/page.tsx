@@ -1029,16 +1029,35 @@ You can request content removal from Blitz in these circumstances:
   },
 ];
 
+interface Article {
+  id: string;
+  title: string;
+  content: string;
+}
+
+interface Section {
+  id: string;
+  title: string;
+  icon: any;
+  color: string;
+  articles: Article[];
+}
+
 export default function Documentation() {
-  const [activeSection, setActiveSection] = useState('getting-started');
-  const [activeArticle, setActiveArticle] = useState('welcome');
+  const [activeSection, setActiveSection] = useState<string>(sections[0].id);
+  const [activeArticle, setActiveArticle] = useState<string>(sections[0].articles[0].id);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<Array<{
+    sectionId: string;
+    articleId: string;
+    sectionTitle: string;
+    articleTitle: string;
+    snippet: string;
+  }>>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Get current section and article
-  const currentSection = sections.find((section) => section.id === activeSection);
-  const currentArticle = currentSection?.articles.find((article) => article.id === activeArticle);
+  const currentSection = sections.find(s => s.id === activeSection);
+  const currentArticle = currentSection?.articles.find(a => a.id === activeArticle);
 
   // Handle search
   const handleSearch = (e: React.FormEvent) => {
@@ -1257,14 +1276,14 @@ export default function Documentation() {
                 <div className="flex justify-between items-center mb-6">
                   <h1 className="text-3xl font-bold text-gray-900">{currentArticle.title}</h1>
                   <div className="flex space-x-2">
-                    {currentSection?.articles.findIndex((a) => a.id === activeArticle) > 0 && (
+                    {currentSection && currentSection.articles.findIndex((a) => a.id === activeArticle) > 0 && (
                       <button
                         onClick={() => {
-                          const currentIndex = currentSection?.articles.findIndex(
+                          const currentIndex = currentSection.articles.findIndex(
                             (a) => a.id === activeArticle
                           );
-                          if (currentIndex !== undefined && currentIndex > 0) {
-                            setActiveArticle(currentSection?.articles[currentIndex - 1].id);
+                          if (currentIndex > 0) {
+                            setActiveArticle(currentSection.articles[currentIndex - 1].id);
                           }
                         }}
                         className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50"
@@ -1273,18 +1292,14 @@ export default function Documentation() {
                         Previous
                       </button>
                     )}
-                    {currentSection?.articles.findIndex((a) => a.id === activeArticle) <
-                      (currentSection?.articles.length || 0) - 1 && (
+                    {currentSection && currentSection.articles.findIndex((a) => a.id === activeArticle) < currentSection.articles.length - 1 && (
                       <button
                         onClick={() => {
-                          const currentIndex = currentSection?.articles.findIndex(
+                          const currentIndex = currentSection.articles.findIndex(
                             (a) => a.id === activeArticle
                           );
-                          if (
-                            currentIndex !== undefined &&
-                            currentIndex < (currentSection?.articles.length || 0) - 1
-                          ) {
-                            setActiveArticle(currentSection?.articles[currentIndex + 1].id);
+                          if (currentIndex < currentSection.articles.length - 1) {
+                            setActiveArticle(currentSection.articles[currentIndex + 1].id);
                           }
                         }}
                         className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50"
