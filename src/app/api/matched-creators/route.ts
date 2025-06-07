@@ -122,7 +122,12 @@ export async function GET(req: Request) {
 
   const matches = creators.filter((creator: Creator) => {
     // Match by audience profile
-    if (creator.audienceProfile && user.listings.some((l: Listing) => l.audienceProfile && l.audienceProfile.includes(creator.audienceProfile))) {
+    if (creator.audienceProfile && user.listings.some((l: Listing) => 
+      l.audienceProfile && 
+      typeof l.audienceProfile === 'string' && 
+      typeof creator.audienceProfile === 'string' && 
+      l.audienceProfile.includes(creator.audienceProfile)
+    )) {
       return true;
     }
 
