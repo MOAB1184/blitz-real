@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import prisma from '@/lib/prisma'
+import { Listing, Category } from '@prisma/client'
 
 function daysAgo(date: Date) {
   const now = new Date()
@@ -33,8 +34,8 @@ export async function GET(req: Request) {
   let matches: any[] = []
   if (user.role === 'SPONSOR') {
     // Find creators with shared categories or region
-    const sponsorCategories = user.listings.flatMap(l => 
-      l.categories.map(c => c.categoryId)
+    const sponsorCategories = user.listings.flatMap((l: any) => 
+      l.categories.map((c: any) => c.category.id)
     )
     const creators = await prisma.user.findMany({
       where: { role: 'CREATOR' },
