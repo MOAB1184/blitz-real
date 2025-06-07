@@ -3,28 +3,26 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import prisma from '@/lib/prisma'
 import type { Prisma } from '@prisma/client'
-import { ListingType, ListingStatus } from '@prisma/client'
 
 interface CategoryWithRelations {
   id: string;
-  name: string;
+  listingId: string;
+  categoryId: string;
 }
 
 interface ListingWithRelations {
   id: string;
   title: string;
   description: string;
-  type: ListingType;
+  type: 'SPONSORSHIP' | 'COLLABORATION' | 'PARTNERSHIP';
   budget: number;
   requirements: string[];
   perks: string[];
-  status: ListingStatus;
+  status: 'OPEN' | 'CLOSED' | 'DRAFT';
   createdAt: Date;
   updatedAt: Date;
   creatorId: string;
-  categories: {
-    category: CategoryWithRelations;
-  }[];
+  categories: CategoryWithRelations[];
 }
 
 export async function GET(

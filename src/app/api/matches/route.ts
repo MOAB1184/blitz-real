@@ -3,7 +3,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import prisma from '@/lib/prisma'
 import type { Prisma } from '@prisma/client'
-import { ListingType, ListingStatus, ApplicationStatus, UserRole } from '@prisma/client'
 
 interface CategoryWithRelations {
   id: string;
@@ -15,11 +14,11 @@ interface ListingWithRelations {
   id: string;
   title: string;
   description: string;
-  type: ListingType;
+  type: 'SPONSORSHIP' | 'COLLABORATION' | 'PARTNERSHIP';
   budget: number;
   requirements: string[];
   perks: string[];
-  status: ListingStatus;
+  status: 'OPEN' | 'CLOSED' | 'DRAFT';
   createdAt: Date;
   updatedAt: Date;
   creatorId: string;
@@ -28,7 +27,7 @@ interface ListingWithRelations {
 
 interface ApplicationWithRelations {
   id: string;
-  status: ApplicationStatus;
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
   createdAt: Date;
   updatedAt: Date;
   listingId: string;
@@ -44,7 +43,7 @@ interface UserWithRelations {
   name: string | null;
   email: string;
   image: string | null;
-  role: UserRole;
+  role: 'CREATOR' | 'SPONSOR' | 'ADMIN';
   listings: ListingWithRelations[];
   applications: ApplicationWithRelations[];
   updatedAt: Date;
