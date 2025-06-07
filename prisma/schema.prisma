@@ -1,0 +1,200 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = "mongodb+srv://nikitadecorah:Tashasha2024!@cluster0.u5goew5.mongodb.net/Blitz?retryWrites=true&w=majority&appName=Cluster0"
+}
+
+model User {
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  email         String        @unique
+  name          String?
+  password      String
+  image         String?
+  bio           String?
+  website       String?
+  socialLinks   Json?
+  role          UserRole     @default(CREATOR)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  listings      Listing[]    @relation("CreatedListings")
+  applications  Application[] @relation("UserApplications")
+  reviews       Review[]     @relation("UserReviews")
+  receivedReviews Review[]   @relation("ReceivedReviews")
+  resetToken    String?
+  resetTokenExpiry DateTime?
+  isVerified    Boolean     @default(false)
+  verificationToken String?
+  verificationTokenExpiry DateTime?
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  conversations    Conversation[] @relation("ConversationParticipants")
+  viewedProfiles   ProfileView[] @relation("ViewedProfiles")
+  profileViews     ProfileView[] @relation("ProfileViews")
+  participantInConversations Participant[] @relation("UserParticipants")
+  payments      Payment[]    @relation("UserPayments")
+  receivedPayments Payment[] @relation("ReceivedPayments")
+}
+
+enum UserRole {
+  CREATOR
+  SPONSOR
+  ADMIN
+}
+
+model Listing {
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  title         String
+  description   String
+  type          ListingType
+  budget        Float
+  requirements  String[]
+  perks         String[]
+  status        ListingStatus @default(OPEN)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  creatorId     String        @db.ObjectId
+  creator       User          @relation("CreatedListings", fields: [creatorId], references: [id])
+  applications  Application[]
+  categories    CategoriesOnListings[]
+  payments      Payment[]     @relation("ListingPayments")
+}
+
+enum ListingType {
+  SPONSORSHIP
+  COLLABORATION
+  PARTNERSHIP
+}
+
+enum ListingStatus {
+  OPEN
+  CLOSED
+  DRAFT
+}
+
+model Category {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  name      String    @unique
+  listings  CategoriesOnListings[]
+}
+
+model CategoriesOnListings {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  listingId   String   @db.ObjectId
+  categoryId  String   @db.ObjectId
+  listing     Listing  @relation(fields: [listingId], references: [id])
+  category    Category @relation(fields: [categoryId], references: [id])
+
+  @@unique([listingId, categoryId])
+}
+
+model Application {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  proposal    String
+  status      ApplicationStatus @default(PENDING)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  userId      String    @db.ObjectId
+  listingId   String    @db.ObjectId
+  user        User      @relation("UserApplications", fields: [userId], references: [id])
+  listing     Listing   @relation(fields: [listingId], references: [id])
+}
+
+enum ApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model Review {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  rating      Int
+  comment     String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  reviewerId  String    @db.ObjectId
+  targetId    String    @db.ObjectId
+  reviewer    User      @relation("UserReviews", fields: [reviewerId], references: [id])
+  target      User      @relation("ReceivedReviews", fields: [targetId], references: [id])
+}
+
+model Conversation {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  messages    Message[]
+  participants User[] @relation("ConversationParticipants")
+  lastMessageAt DateTime @default(now())
+}
+
+model Participant {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String    @db.ObjectId
+  conversationId String    @db.ObjectId
+  user          User      @relation("UserParticipants", fields: [userId], references: [id])
+  conversation  Conversation @relation(fields: [conversationId], references: [id])
+  hasUnread     Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([userId, conversationId])
+}
+
+model Message {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  content       String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  read          Boolean   @default(false)
+  senderId      String    @db.ObjectId
+  receiverId    String    @db.ObjectId
+  conversationId String   @db.ObjectId
+  sender        User      @relation("SentMessages", fields: [senderId], references: [id])
+  receiver      User      @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  conversation  Conversation @relation(fields: [conversationId], references: [id])
+}
+
+model Payment {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  amount      Float
+  platformFee Float
+  processingFee Float
+  total       Float
+  status      PaymentStatus @default(PENDING)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  senderId    String    @db.ObjectId
+  receiverId  String    @db.ObjectId
+  sender      User      @relation("UserPayments", fields: [senderId], references: [id])
+  receiver    User      @relation("ReceivedPayments", fields: [receiverId], references: [id])
+  listingId   String?   @db.ObjectId
+  listing     Listing?  @relation("ListingPayments", fields: [listingId], references: [id])
+  stripePaymentIntentId String?
+  stripePaymentIntentClientSecret String?
+  description String?
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model ProfileView {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String    @db.ObjectId
+  viewerId  String    @db.ObjectId
+  viewedAt  DateTime  @default(now())
+  user      User      @relation("ViewedProfiles", fields: [userId], references: [id])
+  viewer    User      @relation("ProfileViews", fields: [viewerId], references: [id])
+}
+

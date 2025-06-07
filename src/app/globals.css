@@ -1,0 +1,126 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #fff7eb;
+  --primary: #ffb600;
+  --secondary: #ffd97a;
+  --accent: #ffd699;
+}
+
+body {
+  background-color: var(--background);
+  min-height: 100vh;
+}
+
+/* Global color scheme classes */
+.bg-primary {
+  background-color: var(--primary);
+}
+
+.bg-secondary {
+  background-color: var(--secondary);
+}
+
+.bg-accent {
+  background-color: var(--accent);
+}
+
+.text-primary {
+  color: var(--primary);
+}
+
+.text-secondary {
+  color: var(--secondary);
+}
+
+.text-accent {
+  color: var(--accent);
+}
+
+/* Button styles */
+.btn-primary {
+  @apply px-4 py-2 rounded-md font-medium text-gray-900;
+  background-color: var(--primary);
+}
+
+.btn-secondary {
+  @apply px-4 py-2 rounded-md font-medium text-gray-900;
+  background-color: var(--secondary);
+}
+
+/* Card styles */
+.card {
+  @apply rounded-xl shadow-sm;
+  background-color: white;
+}
+
+/* Status badges */
+.status-badge {
+  @apply px-2 py-1 rounded-full text-sm font-medium text-gray-900;
+}
+
+.status-active {
+  background-color: var(--secondary);
+}
+
+.status-draft {
+  background-color: var(--accent);
+}
+
+/* Navigation styles */
+.nav-link {
+  @apply text-gray-900 transition-colors duration-200;
+}
+
+.nav-link:hover {
+  color: var(--primary);
+}
+
+.nav-link-active {
+  @apply text-primary;
+}
+
+/* Form styles */
+.form-input {
+  @apply rounded-lg border-gray-300 shadow-sm sm:text-sm;
+  &:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 1px var(--primary), 0 0 0 4px rgba(var(--primary), 0.1);
+  }
+}
+
+/* Table styles */
+.table-row-alt {
+  background-color: var(--background);
+}
+
+/* Ensure the background color extends to the entire viewport */
+#__next, main {
+  min-height: 100vh;
+  background-color: var(--background);
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+  }
+}
+
+@layer base {
+  body {
+    @apply antialiased;
+  }
+}
+
+@layer components {
+  .input-field {
+    @apply block w-full rounded-md border-gray-300 shadow-sm sm:text-sm;
+    &:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px var(--primary), 0 0 0 4px rgba(var(--primary), 0.1);
+    }
+  }
+} 
