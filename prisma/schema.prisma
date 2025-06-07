@@ -36,12 +36,11 @@ model User {
   verificationTokenExpiry DateTime?
   sentMessages     Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
-  conversations    Conversation[] @relation("ConversationParticipants")
-  viewedProfiles   ProfileView[] @relation("ViewedProfiles")
-  profileViews     ProfileView[] @relation("ProfileViews")
   participantInConversations Participant[] @relation("UserParticipants")
   payments      Payment[]    @relation("UserPayments")
   receivedPayments Payment[] @relation("ReceivedPayments")
+  viewedProfiles   ProfileView[] @relation("ViewedProfiles")
+  profileViews     ProfileView[] @relation("ProfileViews")
 }
 
 enum UserRole {
@@ -131,7 +130,7 @@ model Conversation {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   messages    Message[]
-  participants User[] @relation("ConversationParticipants")
+  participants Participant[]
   lastMessageAt DateTime @default(now())
 }
 

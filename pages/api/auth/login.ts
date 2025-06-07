@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
 import { compare } from 'bcryptjs';
 import { generateToken } from '@/lib/jwt';
-
-const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -45,7 +43,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch (error) {
     console.error('Login error:', error);
     return res.redirect(302, '/login?error=1');
-  } finally {
-    await prisma.$disconnect();
   }
 } 
