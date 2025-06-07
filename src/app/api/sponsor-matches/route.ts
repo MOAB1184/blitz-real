@@ -3,6 +3,33 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 
+interface Listing {
+  id: string;
+  audienceProfile?: string;
+  category?: string;
+  requirements?: string[];
+  budget?: number;
+  applications: Application[];
+}
+
+interface Application {
+  status: string;
+}
+
+interface Creator {
+  audienceProfile?: string;
+  categories?: string[];
+  followers?: number;
+}
+
+interface Sponsor {
+  id: string;
+  name: string;
+  email: string;
+  image: string | null;
+  listings: Listing[];
+}
+
 function calculateMatchScore(creator, sponsor, listings) {
   // Example: 40% audience, 30% value, 30% requirements
   let audienceScore = 0;
@@ -39,79 +66,63 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const creator = await prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    include: { profile: true, categories: true },
-  });
-  if (!creator) return NextResponse.json({ error: 'Creator not found' }, { status: 404 });
-
-  // Get all sponsors
-  const sponsors = await prisma.user.findMany({
-    where: { role: 'SPONSOR' },
-    include: {
-      listings: {
-        where: { status: 'OPEN' },
-        include: { applications: true },
-      },
-      applications: true,
-      profile: true,
-      categories: true,
-    },
+    include: { listings: true }
   });
 
-  // Build sponsor data
-  const sponsorData = await Promise.all(sponsors.map(async sponsor => {
-    const activeListings = sponsor.listings.length;
-    // Successful partnerships: accepted applications for this sponsor's listings
-    const successfulPartnerships = sponsor.listings.reduce((acc, l) => acc + l.applications.filter(a => a.status === 'ACCEPTED').length, 0);
-    // Budget: sum of open listings
-    const budget = sponsor.listings.reduce((acc, l) => acc + (l.budget || 0), 0);
-    // Audience match/value alignment: dummy for now
-    const audienceMatch = Math.floor(Math.random() * 21) + 80; // 80-100
-    const valueMatch = Math.floor(Math.random() * 21) + 80; // 80-100
-    // Match score
-    const matchScore = calculateMatchScore(creator, sponsor, sponsor.listings);
+  if (!user) {
+    return NextResponse.json({ error: 'User not found' }, { status: 404 });
+  }
+
+  const listings = user.listings;
+
+  // Find creators that match the sponsor's requirements
+  const creators = await prisma.user.findMany({
+    where: { role: 'CREATOR' },
+    include: { listings: true }
+  });
+
+  const matches = creators.filter((creator: Creator) => {
+    // Match by audience profile
+    if (creator.audienceProfile && listings.some((l: Listing) => l.audienceProfile && l.audienceProfile.includes(creator.audienceProfile))) {
+      return true;
+    }
+
+    // Match by category
+    if (creator.categories && listings.some((l: Listing) => l.category && creator.categories?.includes(l.category))) {
+      return true;
+    }
+
+    // Match by follower count
+    if (creator.followers && listings.some((l: Listing) => l.requirements && l.requirements.some((r: string) => r.toLowerCase().includes('min') && creator.followers && creator.followers >= parseInt(r.replace(/\D/g, ''))))) {
+      return true;
+    }
+
+    return false;
+  });
+
+  // Get detailed sponsor data for each match
+  const sponsorData = await Promise.all(matches.map(async (sponsor: Sponsor) => {
+    const successfulPartnerships = sponsor.listings.reduce((acc: number, l: Listing) => acc + l.applications.filter((a: Application) => a.status === 'ACCEPTED').length, 0);
+    const totalListings = sponsor.listings.length;
+    const budget = sponsor.listings.reduce((acc: number, l: Listing) => acc + (l.budget || 0), 0);
+
     return {
       id: sponsor.id,
       name: sponsor.name,
-      industry: sponsor.profile?.industry || '',
-      logo: sponsor.profile?.logoUrl || '',
-      matchScore,
-      budget,
-      verified: sponsor.verified,
-      activeListings,
-      successfulPartnerships,
-      audienceMatch,
-      valueMatch,
-      description: sponsor.profile?.bio || '',
-      listings: sponsor.listings.map(l => ({
+      email: sponsor.email,
+      image: sponsor.image,
+      stats: {
+        successfulPartnerships,
+        totalListings,
+        averageBudget: totalListings > 0 ? budget / totalListings : 0
+      },
+      listings: sponsor.listings.map((l: Listing) => ({
         id: l.id,
-        name: l.title,
-        type: l.type,
-        platform: l.platform,
-        audience: l.audience,
-        budget: l.budget,
-        requirements: l.requirements,
-        category: l.category,
-        risk: l.risk,
-        alignment: l.alignment,
-        alignmentScore: l.alignmentScore,
-        pros: l.pros,
-        cons: l.cons,
-        verified: l.verified,
-        roi: l.roi,
-        rating: l.rating,
-        location: l.location,
-        date: l.date,
-        description: l.description,
-        organizer: l.organizer,
-        keyActivities: l.keyActivities,
-        benefits: l.benefits,
-        audienceProfile: l.audienceProfile,
-        frequency: l.frequency,
-        similarSponsorships: l.similarSponsorships,
-        keyMetrics: l.keyMetrics,
-      })),
+        title: l.title,
+        budget: l.budget
+      }))
     };
   }));
 

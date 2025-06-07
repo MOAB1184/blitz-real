@@ -3,6 +3,40 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 
+interface Participant {
+  id: string;
+  userId: string;
+  user: {
+    id: string;
+    name: string | null;
+    image: string | null;
+    email: string;
+  };
+}
+
+interface Conversation {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+  participants: Participant[];
+  messages: {
+    id: string;
+    content: string;
+    createdAt: Date;
+    sender: {
+      name: string | null;
+    };
+  }[];
+}
+
+interface UserParticipation {
+  id: string;
+  userId: string;
+  conversationId: string;
+  hasUnread: boolean;
+  conversation: Conversation;
+}
+
 // GET /api/messages/unread
 // Get count of unread messages for the current user
 export async function GET(req: NextRequest) {
@@ -39,6 +73,7 @@ export async function GET(req: NextRequest) {
                     id: true,
                     name: true,
                     image: true,
+                    email: true
                   },
                 },
               },
@@ -68,15 +103,20 @@ export async function GET(req: NextRequest) {
     });
 
     // Format the unread conversations for the client
-    const formattedUnreadConversations = unreadConversations.map((participation) => {
+    const formattedUnreadConversations = unreadConversations.map((participation: UserParticipation) => {
       const otherParticipants = participation.conversation.participants.filter(
-        (p) => p.userId !== userId
+        (p: Participant) => p.userId !== userId
       );
 
       return {
         id: participation.conversation.id,
-        participants: otherParticipants.map((p) => p.user),
-        unreadMessages: participation.conversation.messages,
+        lastMessage: participation.conversation.messages[0] ? {
+          content: participation.conversation.messages[0].content,
+          sender: participation.conversation.messages[0].sender.name,
+          timestamp: participation.conversation.messages[0].createdAt
+        } : null,
+        participants: otherParticipants.map((p: Participant) => p.user),
+        updatedAt: participation.conversation.updatedAt
       };
     });
 

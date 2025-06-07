@@ -3,6 +3,21 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import prisma from '@/lib/prisma'
 
+interface Category {
+  name: string;
+}
+
+interface Listing {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  budget: number;
+  requirements: string[];
+  perks: string[];
+  categories: Category[];
+}
+
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions)
