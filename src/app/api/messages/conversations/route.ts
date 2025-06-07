@@ -35,6 +35,13 @@ interface UserParticipation {
   conversation: Conversation;
 }
 
+interface ConversationWithParticipants {
+  id: string;
+  participants: {
+    userId: string;
+  }[];
+}
+
 // GET /api/messages/conversations
 // Get all conversations for the current user
 export async function GET(req: NextRequest) {
@@ -147,7 +154,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Find a conversation that has exactly these participants
-    const existingConversation = existingConversations.find(conversation => {
+    const existingConversation = existingConversations.find((conversation: ConversationWithParticipants) => {
       const conversationParticipantIds = conversation.participants.map(p => p.userId);
       return (
         conversationParticipantIds.length === allParticipantIds.length &&
