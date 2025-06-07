@@ -41,7 +41,7 @@ interface NavigationItem {
 }
 
 // Navigation items for sponsors
-const sponsorNavigation = [
+const sponsorNavigation: NavigationItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Browse Creators', href: '/dashboard/browse', icon: MagnifyingGlassIcon },
   { name: 'My Listings', href: '/dashboard/my-listings', icon: BriefcaseIcon },
@@ -68,7 +68,7 @@ const creatorNavigation: NavigationItem[] = [
   { name: 'Settings', href: '/dashboard/settings', icon: Cog6ToothIcon },
 ]
 
-const supportLinks = [
+const supportLinks: NavigationItem[] = [
   { name: 'Help Center', href: '/help', icon: QuestionMarkCircleIcon },
   { name: 'Documentation', href: '/docs', icon: BookOpenIcon },
 ]
