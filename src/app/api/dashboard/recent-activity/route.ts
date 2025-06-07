@@ -62,7 +62,7 @@ export async function GET(req: Request) {
         time: app.updatedAt,
         link: '/dashboard/applications'
       })),
-      ...recentMessages.map(msg => ({
+      ...recentMessages.map((msg: { id: string; sender: { name: string | null }; content: string; createdAt: Date; conversationId: string }) => ({
         id: msg.id,
         type: 'message',
         title: `Message from ${msg.sender.name}`,
