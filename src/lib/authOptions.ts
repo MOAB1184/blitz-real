@@ -1,40 +1,9 @@
-import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { compare } from 'bcrypt'
 import prisma from './prisma'
-import { JWT } from 'next-auth/jwt'
-import { Session, User } from 'next-auth'
+import { NextAuthOptions } from 'next-auth'
 
-// Module augmentation for next-auth
-
-declare module 'next-auth' {
-  interface Session {
-    user: {
-      id: string
-      email: string
-      name?: string | null
-      image?: string | null
-      role: string
-    }
-  }
-
-  interface User {
-    id: string
-    email: string
-    name?: string | null
-    image?: string | null
-    role: string
-  }
-}
-
-declare module 'next-auth/jwt' {
-  interface JWT {
-    id: string
-    role: string
-  }
-}
-
-export const authOptions: NextAuthOptions = {
+const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: 'credentials',
@@ -101,4 +70,6 @@ export const authOptions: NextAuthOptions = {
     }
   },
   secret: process.env.NEXTAUTH_SECRET,
-} 
+}
+
+export default authOptions; 
