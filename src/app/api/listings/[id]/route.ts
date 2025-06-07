@@ -25,10 +25,20 @@ interface ListingWithRelations {
   categories: CategoryWithRelations[];
 }
 
+interface CategoryConnectOrCreate {
+  where: { name: string };
+  create: { name: string };
+}
+
 export async function GET(
   req: Request,
   { params }: { params: { id: string } }
 ) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
     const listing = await prisma.listing.findUnique({
       where: { id: params.id },
@@ -37,28 +47,12 @@ export async function GET(
           select: {
             id: true,
             name: true,
-            email: true,
-            image: true,
-            bio: true,
-            website: true,
-            socialLinks: true
+            image: true
           }
         },
         categories: {
           include: {
             category: true
-          }
-        },
-        applications: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                image: true
-              }
-            }
           }
         }
       }
@@ -71,7 +65,7 @@ export async function GET(
     return NextResponse.json(listing)
   } catch (error) {
     console.error('Error fetching listing:', error)
-    return NextResponse.json({ error: 'Error fetching listing' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to fetch listing' }, { status: 500 })
   }
 }
 
@@ -84,43 +78,44 @@ export async function PUT(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const listing = await prisma.listing.findUnique({
-    where: { id: params.id },
-    include: { categories: { include: { category: true } } }
-  })
-
-  if (!listing) {
-    return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
-  }
-
-  if (listing.creatorId !== session.user.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  const data = await req.json()
-  const { categories, ...updateData } = data
-
-  // Handle categories
-  if (categories) {
-    // Remove existing categories
-    await prisma.categoriesOnListings.deleteMany({
-      where: { listingId: params.id }
+  try {
+    const listing = await prisma.listing.findUnique({
+      where: { id: params.id }
     })
 
-    // Add new categories
+    if (!listing) {
+      return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
+    }
+
+    if (listing.creatorId !== session.user.id) {
+      return NextResponse.json({ error: 'Not authorized to update this listing' }, { status: 403 })
+    }
+
+    const { title, description, type, budget, requirements, perks, categories } = await req.json()
+
+    // Validate categories
     const validCategories = (categories || []).filter((name: string) => !!name && typeof name === 'string')
     const categoryConnectOrCreate = validCategories.map((name: string) => ({
       where: { name },
       create: { name }
     }))
 
-    await prisma.listing.update({
+    // Update the listing
+    const updatedListing = await prisma.listing.update({
       where: { id: params.id },
       data: {
-        ...updateData,
+        title,
+        description,
+        type,
+        budget,
+        requirements,
+        perks,
         categories: {
-          create: categoryConnectOrCreate.map((cat: { where: { name: string }; create: { name: string } }) => ({
-            category: { connectOrCreate: cat }
+          deleteMany: {},
+          create: categoryConnectOrCreate.map((cat: CategoryConnectOrCreate) => ({
+            category: {
+              connectOrCreate: cat
+            }
           }))
         }
       },
@@ -132,33 +127,12 @@ export async function PUT(
         }
       }
     })
-  } else {
-    // Update without changing categories
-    await prisma.listing.update({
-      where: { id: params.id },
-      data: updateData,
-      include: {
-        categories: {
-          include: {
-            category: true
-          }
-        }
-      }
-    })
+
+    return NextResponse.json(updatedListing)
+  } catch (error) {
+    console.error('Error updating listing:', error)
+    return NextResponse.json({ error: 'Failed to update listing' }, { status: 500 })
   }
-
-  const updatedListing = await prisma.listing.findUnique({
-    where: { id: params.id },
-    include: {
-      categories: {
-        include: {
-          category: true
-        }
-      }
-    }
-  })
-
-  return NextResponse.json(updatedListing)
 }
 
 export async function DELETE(
@@ -170,21 +144,26 @@ export async function DELETE(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const listing = await prisma.listing.findUnique({
-    where: { id: params.id }
-  })
+  try {
+    const listing = await prisma.listing.findUnique({
+      where: { id: params.id }
+    })
 
-  if (!listing) {
-    return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
+    if (!listing) {
+      return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
+    }
+
+    if (listing.creatorId !== session.user.id) {
+      return NextResponse.json({ error: 'Not authorized to delete this listing' }, { status: 403 })
+    }
+
+    await prisma.listing.delete({
+      where: { id: params.id }
+    })
+
+    return NextResponse.json({ message: 'Listing deleted successfully' })
+  } catch (error) {
+    console.error('Error deleting listing:', error)
+    return NextResponse.json({ error: 'Failed to delete listing' }, { status: 500 })
   }
-
-  if (listing.creatorId !== session.user.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  await prisma.listing.delete({
-    where: { id: params.id }
-  })
-
-  return NextResponse.json({ success: true })
 } 

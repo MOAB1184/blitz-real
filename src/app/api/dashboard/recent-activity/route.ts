@@ -2,6 +2,27 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import prisma from '@/lib/prisma'
+import type { Prisma } from '@prisma/client'
+
+interface Application {
+  id: string;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+  listing: {
+    title: string;
+  };
+}
+
+interface Message {
+  id: string;
+  sender: {
+    name: string | null;
+  };
+  content: string;
+  createdAt: Date;
+  conversationId: string;
+}
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
@@ -16,10 +37,14 @@ export async function GET(req: Request) {
         userId: session.user.id
       },
       include: {
-        listing: true
+        listing: {
+          select: {
+            title: true
+          }
+        }
       },
       orderBy: {
-        createdAt: 'desc'
+        updatedAt: 'desc'
       },
       take: 5
     })
@@ -35,13 +60,6 @@ export async function GET(req: Request) {
       include: {
         sender: {
           select: {
-            id: true,
-            name: true
-          }
-        },
-        receiver: {
-          select: {
-            id: true,
             name: true
           }
         }
@@ -52,26 +70,23 @@ export async function GET(req: Request) {
       take: 5
     })
 
-    // Combine and format activities
+    // Combine and sort activities
     const activities = [
-      ...recentApplications.map((app: { id: string; status: string; createdAt: Date; updatedAt: Date; listing: { title: string } }) => ({
+      ...recentApplications.map((app: Application) => ({
         id: app.id,
-        type: 'application_update',
-        title: `Application ${app.status.toLowerCase()}`,
-        description: `Your application for "${app.listing.title}" has been ${app.status.toLowerCase()}.`,
-        time: app.updatedAt,
-        link: '/dashboard/applications'
+        type: 'application',
+        status: app.status,
+        title: app.listing.title,
+        timestamp: app.updatedAt
       })),
-      ...recentMessages.map((msg: { id: string; sender: { name: string | null }; content: string; createdAt: Date; conversationId: string }) => ({
+      ...recentMessages.map((msg: Message) => ({
         id: msg.id,
         type: 'message',
-        title: `Message from ${msg.sender.name}`,
-        description: msg.content.substring(0, 100) + (msg.content.length > 100 ? '...' : ''),
-        time: msg.createdAt,
-        link: `/dashboard/messages?conversation=${msg.conversationId}`
+        sender: msg.sender.name || 'Unknown',
+        content: msg.content,
+        timestamp: msg.createdAt
       }))
-    ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
-    .slice(0, 5)
+    ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
 
     return NextResponse.json(activities)
   } catch (error) {

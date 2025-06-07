@@ -2,30 +2,26 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
 
 interface Participant {
   id: string;
-  userId: string;
-  user: {
-    id: string;
-    name: string | null;
-    image: string | null;
-    email: string;
-  };
+  name: string | null;
+  image: string | null;
 }
 
 interface Conversation {
   id: string;
   createdAt: Date;
   updatedAt: Date;
-  participants: Participant[];
+  participants: {
+    user: Participant;
+  }[];
   messages: {
     id: string;
     content: string;
     createdAt: Date;
-    sender: {
-      name: string | null;
-    };
+    senderId: string;
   }[];
 }
 
@@ -34,6 +30,8 @@ interface UserParticipation {
   userId: string;
   conversationId: string;
   hasUnread: boolean;
+  createdAt: Date;
+  updatedAt: Date;
   conversation: Conversation;
 }
 
@@ -73,7 +71,6 @@ export async function GET(req: NextRequest) {
                     id: true,
                     name: true,
                     image: true,
-                    email: true
                   },
                 },
               },
@@ -104,19 +101,22 @@ export async function GET(req: NextRequest) {
 
     // Format the unread conversations for the client
     const formattedUnreadConversations = unreadConversations.map((participation: UserParticipation) => {
-      const otherParticipants = participation.conversation.participants.filter(
-        (p: Participant) => p.userId !== userId
+      const conversation = participation.conversation;
+      const lastMessage = conversation.messages[0];
+      const otherParticipants = conversation.participants.filter(
+        (p: { user: Participant }) => p.user.id !== userId
       );
 
       return {
-        id: participation.conversation.id,
-        lastMessage: participation.conversation.messages[0] ? {
-          content: participation.conversation.messages[0].content,
-          sender: participation.conversation.messages[0].sender.name,
-          timestamp: participation.conversation.messages[0].createdAt
+        id: conversation.id,
+        lastMessage: lastMessage ? {
+          id: lastMessage.id,
+          content: lastMessage.content,
+          createdAt: lastMessage.createdAt,
+          senderId: lastMessage.senderId
         } : null,
-        participants: otherParticipants.map((p: Participant) => p.user),
-        updatedAt: participation.conversation.updatedAt
+        participants: otherParticipants.map((p: { user: Participant }) => p.user),
+        updatedAt: conversation.updatedAt
       };
     });
 
