@@ -2,14 +2,36 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 
+interface Application {
+  id: string;
+  proposal: string;
+  status: string;
+  user?: {
+    name: string | null;
+    email: string;
+  };
+}
+
+interface Listing {
+  id: string;
+  title: string;
+  applications: Application[];
+}
+
 export default function ApplicationsPage() {
-  const params = useParams();
-  const [listing, setListing] = useState<any>(null);
+  const params = useParams<{ id: string }>();
+  const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchListing = async () => {
+      if (!params?.id) {
+        setError('Invalid listing ID');
+        setLoading(false);
+        return;
+      }
+
       try {
         const res = await fetch(`/api/listings/${params.id}`);
         if (!res.ok) throw new Error('Failed to fetch listing');
@@ -21,8 +43,8 @@ export default function ApplicationsPage() {
         setLoading(false);
       }
     };
-    if (params.id) fetchListing();
-  }, [params.id]);
+    fetchListing();
+  }, [params?.id]);
 
   if (loading) return <div className="p-8">Loading...</div>;
   if (error || !listing) return <div className="p-8 text-red-600">{error || 'Listing not found'}</div>;
@@ -41,7 +63,7 @@ export default function ApplicationsPage() {
             </tr>
           </thead>
           <tbody>
-            {listing.applications.map((app: any) => (
+            {listing.applications.map((app: Application) => (
               <tr key={app.id}>
                 <td className="px-4 py-2">{app.user?.name || 'N/A'}</td>
                 <td className="px-4 py-2">{app.user?.email || 'N/A'}</td>
