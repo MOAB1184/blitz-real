@@ -54,7 +54,7 @@ export async function GET(req: Request) {
 
     // Combine and format activities
     const activities = [
-      ...recentApplications.map(app => ({
+      ...recentApplications.map((app: { id: string; status: string; createdAt: Date; updatedAt: Date; listing: { title: string } }) => ({
         id: app.id,
         type: 'application_update',
         title: `Application ${app.status.toLowerCase()}`,
