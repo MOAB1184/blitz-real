@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import prisma from '@/lib/prisma'
-import { Listing, Category } from '@prisma/client'
 
 function daysAgo(date: Date) {
   const now = new Date()
