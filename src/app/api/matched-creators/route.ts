@@ -59,14 +59,25 @@ function calculateMatchScore(sponsor: Sponsor, creator: Creator): number {
   let requirementsScore = 0;
 
   // Audience overlap
-  if (sponsor.listings.some(l => l.audienceProfile && creator.audienceProfile && l.audienceProfile.includes(creator.audienceProfile))) {
+  if (sponsor.listings.some(l => 
+    l.audienceProfile && 
+    creator.audienceProfile && 
+    typeof l.audienceProfile === 'string' && 
+    typeof creator.audienceProfile === 'string' && 
+    l.audienceProfile.includes(creator.audienceProfile)
+  )) {
     audienceScore = 100;
   } else {
     audienceScore = 60;
   }
 
   // Value alignment
-  if (creator.categories && sponsor.listings.some(l => l.category && creator.categories?.includes(l.category))) {
+  if (creator.categories && sponsor.listings.some(l => 
+    l.category && 
+    typeof l.category === 'string' && 
+    creator.categories && 
+    creator.categories.includes(l.category)
+  )) {
     valueScore = 100;
   } else {
     valueScore = 60;
@@ -132,7 +143,12 @@ export async function GET(req: Request) {
     }
 
     // Match by category
-    if (creator.categories && user.listings.some((l: Listing) => l.category && creator.categories?.includes(l.category))) {
+    if (creator.categories && user.listings.some((l: Listing) => 
+      l.category && 
+      typeof l.category === 'string' && 
+      creator.categories && 
+      creator.categories.includes(l.category)
+    )) {
       return true;
     }
 
@@ -165,7 +181,7 @@ export async function GET(req: Request) {
   });
 
   // Sort by match score descending
-  creatorData.sort((a, b) => b.matchScore - a.matchScore);
+  creatorData.sort((a: { matchScore: number }, b: { matchScore: number }) => b.matchScore - a.matchScore);
 
   return NextResponse.json(creatorData);
 }

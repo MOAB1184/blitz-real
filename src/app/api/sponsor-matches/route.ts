@@ -38,14 +38,24 @@ function calculateMatchScore(creator: Creator, sponsor: Sponsor, listings: Listi
   let requirementsScore = 0;
 
   // Audience overlap
-  if (creator.audienceProfile && listings.some(l => l.audienceProfile && l.audienceProfile.includes(creator.audienceProfile))) {
+  if (creator.audienceProfile && listings.some(l => 
+    l.audienceProfile && 
+    typeof l.audienceProfile === 'string' && 
+    typeof creator.audienceProfile === 'string' && 
+    l.audienceProfile.includes(creator.audienceProfile)
+  )) {
     audienceScore = 100;
   } else {
     audienceScore = 60;
   }
 
   // Value alignment
-  if (creator.categories && listings.some(l => l.category && creator.categories.includes(l.category))) {
+  if (creator.categories && listings.some(l => 
+    l.category && 
+    typeof l.category === 'string' && 
+    creator.categories && 
+    creator.categories.includes(l.category)
+  )) {
     valueScore = 100;
   } else {
     valueScore = 60;
@@ -98,12 +108,21 @@ export async function GET(req: Request) {
 
   const matches = sponsors.filter((sponsor: Sponsor) => {
     // Match by audience profile
-    if (user.audienceProfile && sponsor.listings.some((l: Listing) => l.audienceProfile && l.audienceProfile.includes(user.audienceProfile))) {
+    if (user.audienceProfile && sponsor.listings.some((l: Listing) => 
+      l.audienceProfile && 
+      typeof l.audienceProfile === 'string' && 
+      typeof user.audienceProfile === 'string' && 
+      l.audienceProfile.includes(user.audienceProfile)
+    )) {
       return true;
     }
 
     // Match by category
-    if (user.categories && sponsor.listings.some((l: Listing) => l.category && user.categories?.includes(l.category))) {
+    if (user.categories && sponsor.listings.some((l: Listing) => 
+      l.category && 
+      typeof l.category === 'string' && 
+      user.categories.includes(l.category)
+    )) {
       return true;
     }
 
@@ -142,7 +161,7 @@ export async function GET(req: Request) {
   });
 
   // Sort by match score descending
-  sponsorData.sort((a, b) => b.matchScore - a.matchScore);
+  sponsorData.sort((a: { matchScore: number }, b: { matchScore: number }) => b.matchScore - a.matchScore);
 
   return NextResponse.json(sponsorData);
 }
