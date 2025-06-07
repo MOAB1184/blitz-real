@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import prisma from '@/lib/prisma'
-import type { Listing, Application, User, Category } from '@prisma/client'
+import type { Prisma } from '@prisma/client'
+import { ListingType, ListingStatus, ApplicationStatus, UserRole } from '@prisma/client'
 
 interface CategoryWithRelations {
   id: string;
@@ -10,19 +11,43 @@ interface CategoryWithRelations {
   categoryId: string;
 }
 
-interface ListingWithRelations extends Listing {
+interface ListingWithRelations {
+  id: string;
+  title: string;
+  description: string;
+  type: ListingType;
+  budget: number;
+  requirements: string[];
+  perks: string[];
+  status: ListingStatus;
+  createdAt: Date;
+  updatedAt: Date;
+  creatorId: string;
   categories: CategoryWithRelations[];
 }
 
-interface ApplicationWithRelations extends Application {
+interface ApplicationWithRelations {
+  id: string;
+  status: ApplicationStatus;
+  createdAt: Date;
+  updatedAt: Date;
+  listingId: string;
+  proposal: string;
+  userId: string;
   listing: {
     title: string;
   };
 }
 
-interface UserWithRelations extends User {
+interface UserWithRelations {
+  id: string;
+  name: string | null;
+  email: string;
+  image: string | null;
+  role: UserRole;
   listings: ListingWithRelations[];
   applications: ApplicationWithRelations[];
+  updatedAt: Date;
 }
 
 function daysAgo(date: Date) {

@@ -2,14 +2,26 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import prisma from '@/lib/prisma'
-import type { Listing, Category } from '@prisma/client'
+import type { Prisma } from '@prisma/client'
+import { ListingType, ListingStatus } from '@prisma/client'
 
 interface CategoryWithRelations {
   id: string;
   name: string;
 }
 
-interface ListingWithRelations extends Listing {
+interface ListingWithRelations {
+  id: string;
+  title: string;
+  description: string;
+  type: ListingType;
+  budget: number;
+  requirements: string[];
+  perks: string[];
+  status: ListingStatus;
+  createdAt: Date;
+  updatedAt: Date;
+  creatorId: string;
   categories: {
     category: CategoryWithRelations;
   }[];
