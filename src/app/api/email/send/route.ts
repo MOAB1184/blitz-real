@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
-  const sgMail = require('@sendgrid/mail');
+  const sgMail = (await import('@sendgrid/mail')).default;
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
   try {
