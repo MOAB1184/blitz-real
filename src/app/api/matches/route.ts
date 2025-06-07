@@ -18,7 +18,14 @@ export async function GET(req: Request) {
   }
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    include: { listings: true, applications: true }
+    include: { 
+      listings: { 
+        include: { 
+          categories: true 
+        } 
+      }, 
+      applications: true 
+    }
   })
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
@@ -26,7 +33,9 @@ export async function GET(req: Request) {
   let matches: any[] = []
   if (user.role === 'SPONSOR') {
     // Find creators with shared categories or region
-    const sponsorCategories = user.listings.flatMap(l => Array.isArray((l as any).categories) ? (l as any).categories.map((c: any) => c.categoryId) : [])
+    const sponsorCategories = user.listings.flatMap(l => 
+      l.categories.map(c => c.categoryId)
+    )
     const creators = await prisma.user.findMany({
       where: { role: 'CREATOR' },
       include: { listings: { include: { categories: true } }, applications: true }
