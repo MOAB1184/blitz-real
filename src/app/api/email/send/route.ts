@@ -14,6 +14,11 @@ export async function POST(req: Request) {
   }
 
   const sgMail = (await import('@sendgrid/mail')).default;
+  
+  if (!process.env.SENDGRID_API_KEY) {
+    throw new Error('SENDGRID_API_KEY is not defined');
+  }
+  
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
   try {
