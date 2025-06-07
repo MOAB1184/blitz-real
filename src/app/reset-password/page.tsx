@@ -7,7 +7,7 @@ import { Input, Button } from '@/components/ui/Form';
 export default function ResetPasswordPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get('token');
+  const token = searchParams?.get('token') || null;
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');

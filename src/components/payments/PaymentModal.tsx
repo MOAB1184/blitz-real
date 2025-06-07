@@ -11,6 +11,23 @@ import {
 } from '@heroicons/react/24/outline';
 import PaymentForm from './PaymentForm';
 
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  image: string | null;
+}
+
+interface PaymentData {
+  paymentId: string;
+  amount: number;
+  platformFee: number;
+  processingFee: number;
+  total: number;
+  receiver: User;
+  description?: string;
+}
+
 interface PaymentModalProps {
   onClose: () => void;
   onPaymentCreated: () => void;
@@ -30,9 +47,9 @@ export default function PaymentModal({
 }: PaymentModalProps) {
   const { data: session } = useSession();
   const [step, setStep] = useState<'form' | 'payment'>('form');
-  const [paymentData, setPaymentData] = useState<any>(null);
+  const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
 
-  const handleFormSubmit = (data: any) => {
+  const handleFormSubmit = (data: PaymentData) => {
     setPaymentData(data);
     setStep('payment');
   };
@@ -88,7 +105,7 @@ export default function PaymentModal({
 }
 
 interface PaymentFormStepProps {
-  onSubmit: (data: any) => void;
+  onSubmit: (data: PaymentData) => void;
   prefilledReceiverId?: string;
   prefilledListingId?: string;
   prefilledAmount?: number;
@@ -106,8 +123,8 @@ function PaymentFormStep({
   const [amount, setAmount] = useState(prefilledAmount?.toString() || '');
   const [description, setDescription] = useState(prefilledDescription || '');
   const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [searchResults, setSearchResults] = useState<User[]>([]);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -125,7 +142,7 @@ function PaymentFormStep({
 
     try {
       // Mock search results - in a real app, you'd make an API call
-      const mockResults = [
+      const mockResults: User[] = [
         { id: 'user1', name: 'John Doe', email: 'john@example.com', image: null },
         { id: 'user2', name: 'Jane Smith', email: 'jane@example.com', image: null },
         { id: 'user3', name: 'Bob Johnson', email: 'bob@example.com', image: null },
@@ -137,10 +154,11 @@ function PaymentFormStep({
       setSearchResults(mockResults);
     } catch (error) {
       console.error('Error searching users:', error);
+      setSearchResults([]);
     }
   };
 
-  const handleSelectUser = (user: any) => {
+  const handleSelectUser = (user: User) => {
     setSelectedUser(user);
     setReceiverId(user.id);
     setSearchTerm(user.name);
@@ -150,7 +168,7 @@ function PaymentFormStep({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!receiverId || !amount || amountNum <= 0) {
+    if (!receiverId || !amount || amountNum <= 0 || !selectedUser) {
       setError('Please select a recipient and enter a valid amount');
       return;
     }
@@ -187,7 +205,7 @@ function PaymentFormStep({
         processingFee,
         total,
         receiver: selectedUser,
-        description,
+        description: description || undefined,
       });
     } catch (err: any) {
       console.error('Error creating payment:', err);

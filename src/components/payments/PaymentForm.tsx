@@ -6,22 +6,28 @@ import {
   LockClosedIcon,
   ArrowLeftIcon,
   CheckCircleIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  image: string | null;
+}
+
+interface PaymentData {
+  paymentId: string;
+  amount: number;
+  platformFee: number;
+  processingFee: number;
+  total: number;
+  receiver: User;
+  description?: string;
+}
+
 interface PaymentFormProps {
-  paymentData: {
-    paymentId: string;
-    amount: number;
-    platformFee: number;
-    processingFee: number;
-    total: number;
-    receiver: {
-      id: string;
-      name: string;
-      email: string;
-    };
-    description?: string;
-  };
+  paymentData: PaymentData | null;
   onComplete: () => void;
   onBack: () => void;
 }
@@ -38,6 +44,27 @@ export default function PaymentForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+
+  if (!paymentData) {
+    return (
+      <div className="text-center py-6">
+        <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+          <XMarkIcon className="h-6 w-6 text-red-600" />
+        </div>
+        <h3 className="mt-3 text-lg font-medium text-gray-900">Payment Data Missing</h3>
+        <p className="mt-2 text-sm text-gray-500">
+          Please go back and try again.
+        </p>
+        <button
+          onClick={onBack}
+          className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+        >
+          <ArrowLeftIcon className="h-4 w-4 mr-2" />
+          Go Back
+        </button>
+      </div>
+    );
+  }
 
   const formatCardNumber = (value: string) => {
     // Remove all non-digit characters
@@ -200,8 +227,7 @@ export default function PaymentForm({
               placeholder="1234 5678 9012 3456"
               value={cardNumber}
               onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               maxLength={19}
             />
           </div>
@@ -213,11 +239,10 @@ export default function PaymentForm({
           </label>
           <input
             type="text"
-            placeholder="John Doe"
             value={cardName}
             onChange={(e) => setCardName(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
+            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            placeholder="John Doe"
           />
         </div>
 
@@ -228,57 +253,64 @@ export default function PaymentForm({
             </label>
             <input
               type="text"
-              placeholder="MM/YY"
               value={expiryDate}
               onChange={(e) => setExpiryDate(formatExpiryDate(e.target.value))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="MM/YY"
               maxLength={5}
             />
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               CVC
             </label>
             <input
               type="text"
-              placeholder="123"
               value={cvc}
               onChange={(e) => setCvc(e.target.value.replace(/\D/g, '').slice(0, 3))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="123"
               maxLength={3}
             />
           </div>
         </div>
 
-        <div className="flex items-center">
-          <LockClosedIcon className="h-4 w-4 text-gray-400 mr-2" />
-          <span className="text-xs text-gray-500">
-            Your payment information is encrypted and secure.
-          </span>
-        </div>
-
         {error && (
-          <div className="text-red-500 text-sm">{error}</div>
+          <div className="text-red-600 text-sm mt-2">
+            {error}
+          </div>
         )}
 
-        <div className="flex space-x-4">
+        <div className="flex justify-between items-center pt-4">
           <button
             type="button"
             onClick={onBack}
-            disabled={loading}
-            className="flex items-center justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
           >
-            <ArrowLeftIcon className="h-4 w-4 mr-1" />
+            <ArrowLeftIcon className="h-4 w-4 mr-2" />
             Back
           </button>
+
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
           >
-            {loading ? 'Processing...' : `Pay $${paymentData.total.toFixed(2)}`}
+            {loading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Processing...
+              </>
+            ) : (
+              <>
+                <LockClosedIcon className="h-4 w-4 mr-2" />
+                Pay ${paymentData.total.toFixed(2)}
+              </>
+            )}
           </button>
         </div>
       </form>

@@ -18,6 +18,11 @@ interface Message {
   sender: User;
 }
 
+interface MessageGroup {
+  date: string;
+  messages: Message[];
+}
+
 export default function MessageThread({ conversationId }: { conversationId: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -30,7 +35,11 @@ export default function MessageThread({ conversationId }: { conversationId: stri
   // Fetch messages when conversation ID changes
   useEffect(() => {
     const fetchMessages = async () => {
-      if (!conversationId) return;
+      if (!conversationId) {
+        setMessages([]);
+        setLoading(false);
+        return;
+      }
       
       try {
         setLoading(true);
@@ -40,12 +49,13 @@ export default function MessageThread({ conversationId }: { conversationId: stri
           throw new Error('Failed to fetch messages');
         }
         
-        const data = await response.json();
+        const data = await response.json() as Message[];
         setMessages(data);
         setError(null);
       } catch (err) {
         console.error('Error fetching messages:', err);
         setError('Failed to load messages. Please try again.');
+        setMessages([]);
       } finally {
         setLoading(false);
       }
@@ -61,17 +71,23 @@ export default function MessageThread({ conversationId }: { conversationId: stri
 
   // Scroll to bottom when messages change
   useEffect(() => {
-    scrollToBottom();
+    if (messages.length > 0) {
+      scrollToBottom();
+    }
   }, [messages]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newMessage.trim() || !conversationId || !session?.user?.id) return;
+    if (!newMessage.trim() || !conversationId || !session?.user?.id) {
+      return;
+    }
     
     try {
       setSending(true);
@@ -93,7 +109,7 @@ export default function MessageThread({ conversationId }: { conversationId: stri
       // Refresh messages
       const messagesResponse = await fetch(`/api/messages/${conversationId}`);
       if (messagesResponse.ok) {
-        const data = await messagesResponse.json();
+        const data = await messagesResponse.json() as Message[];
         setMessages(data);
       }
     } catch (err) {
@@ -131,8 +147,8 @@ export default function MessageThread({ conversationId }: { conversationId: stri
   };
 
   // Group messages by date
-  const groupMessagesByDate = () => {
-    const groups: { date: string; messages: Message[] }[] = [];
+  const groupMessagesByDate = (): MessageGroup[] => {
+    const groups: MessageGroup[] = [];
     let currentDate = '';
     let currentGroup: Message[] = [];
     
@@ -207,94 +223,79 @@ export default function MessageThread({ conversationId }: { conversationId: stri
 
   return (
     <div className="flex flex-col h-full">
-      {/* Messages area */}
-      <div className="flex-1 overflow-y-auto p-4">
-        {messageGroups.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center text-gray-500">
-            <p className="text-lg font-medium">No messages yet</p>
-            <p className="text-sm">Start the conversation by sending a message</p>
-          </div>
-        ) : (
-          messageGroups.map((group, groupIndex) => (
-            <div key={groupIndex} className="mb-6">
-              <div className="flex justify-center mb-4">
-                <div className="px-4 py-1 bg-gray-100 rounded-full text-sm text-gray-500">
-                  {formatDate(new Date(group.date).toISOString())}
-                </div>
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messageGroups.map((group, groupIndex) => (
+          <div key={group.date} className="space-y-4">
+            {/* Date separator */}
+            <div className="flex items-center justify-center">
+              <div className="px-4 py-1 bg-gray-100 rounded-full text-sm text-gray-500">
+                {formatDate(group.date)}
               </div>
+            </div>
+            
+            {/* Messages */}
+            {group.messages.map((message) => {
+              const isOwnMessage = message.senderId === session?.user?.id;
               
-              {group.messages.map((message, index) => {
-                const isCurrentUser = message.senderId === session?.user?.id;
-                const showAvatar = index === 0 || 
-                  group.messages[index - 1].senderId !== message.senderId;
-                
-                return (
-                  <div 
-                    key={message.id} 
-                    className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} mb-2`}
-                  >
-                    {!isCurrentUser && showAvatar && (
-                      <div className="flex-shrink-0 mr-2">
-                        {message.sender.image ? (
-                          <img 
-                            src={message.sender.image} 
-                            alt={message.sender.name || 'User'} 
-                            className="h-8 w-8 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold text-gray-500">
-                            {message.sender.name ? message.sender.name.charAt(0).toUpperCase() : '?'}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    
-                    <div className={`max-w-[70%] ${!isCurrentUser && !showAvatar ? 'ml-10' : ''}`}>
-                      {!isCurrentUser && showAvatar && (
-                        <div className="text-xs text-gray-500 mb-1 ml-1">
-                          {message.sender.name || 'Unknown User'}
+              return (
+                <div
+                  key={message.id}
+                  className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div className={`flex items-end ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'} max-w-[70%]`}>
+                    {/* Avatar */}
+                    <div className="flex-shrink-0 mx-2">
+                      {message.sender.image ? (
+                        <img
+                          src={message.sender.image}
+                          alt={message.sender.name || 'User'}
+                          className="h-8 w-8 rounded-full"
+                        />
+                      ) : (
+                        <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium text-gray-500">
+                          {message.sender.name?.[0]?.toUpperCase() || '?'}
                         </div>
                       )}
-                      
-                      <div className="flex items-end">
-                        <div 
-                          className={`px-4 py-2 rounded-lg ${
-                            isCurrentUser 
-                              ? 'bg-blue-500 text-white rounded-br-none' 
-                              : 'bg-gray-100 text-gray-800 rounded-bl-none'
-                          }`}
-                        >
-                          {message.content}
-                        </div>
-                        <span className="text-xs text-gray-500 ml-2">
-                          {formatMessageTime(message.createdAt)}
-                        </span>
-                      </div>
+                    </div>
+                    
+                    {/* Message content */}
+                    <div
+                      className={`rounded-lg px-4 py-2 ${
+                        isOwnMessage
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-100 text-gray-900'
+                      }`}
+                    >
+                      <p className="text-sm">{message.content}</p>
+                      <span className="text-xs opacity-75 mt-1 block">
+                        {formatMessageTime(message.createdAt)}
+                      </span>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          ))
-        )}
+                </div>
+              );
+            })}
+          </div>
+        ))}
         <div ref={messagesEndRef} />
       </div>
-      
+
       {/* Message input */}
-      <div className="border-t p-4" style={{ borderColor: 'var(--secondary)' }}>
-        <form onSubmit={handleSendMessage} className="flex items-center">
+      <div className="border-t border-gray-200 p-4">
+        <form onSubmit={handleSendMessage} className="flex space-x-4">
           <input
             type="text"
-            placeholder="Type a message..."
-            className="flex-1 border rounded-l-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
+            placeholder="Type a message..."
+            className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={sending}
           />
           <button
             type="submit"
-            className="bg-blue-500 text-white rounded-r-md px-4 py-2 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
             disabled={!newMessage.trim() || sending}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
           >
             <PaperAirplaneIcon className="h-5 w-5" />
           </button>

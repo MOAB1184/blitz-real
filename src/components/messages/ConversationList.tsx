@@ -98,7 +98,7 @@ export default function ConversationList({ selectedId, onSelect }: { selectedId?
   // Function to get the other participant's name
   const getParticipantName = (conversation: Conversation) => {
     const participant = conversation.participants[0];
-    return participant?.name || 'Unknown User';
+    return participant?.name || participant?.email || 'Unknown User';
   };
 
   // Function to get the message preview
@@ -119,7 +119,7 @@ export default function ConversationList({ selectedId, onSelect }: { selectedId?
       return (
         <img 
           src={participant.image} 
-          alt={participant.name || 'User'} 
+          alt={participant.name || participant.email || 'User'} 
           className="h-12 w-12 rounded-full object-cover"
         />
       );
@@ -128,7 +128,7 @@ export default function ConversationList({ selectedId, onSelect }: { selectedId?
     // Default avatar with initials
     const initials = participant?.name 
       ? participant.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) 
-      : '?';
+      : participant?.email?.[0].toUpperCase() || '?';
       
     return (
       <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center text-lg font-bold text-gray-500">

@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/Form';
 export default function VerifyEmailPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const token = searchParams.get('token');
-  const sent = searchParams.get('sent');
+  const token = searchParams?.get('token') || null;
+  const sent = searchParams?.get('sent') || null;
   const [status, setStatus] = useState<'idle' | 'verifying' | 'success' | 'error' | 'missing'>('idle');
   const [message, setMessage] = useState('');
 

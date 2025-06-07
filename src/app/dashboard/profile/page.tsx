@@ -22,67 +22,80 @@ function DefaultAvatar({ name }: { name?: string | null }) {
   )
 }
 
+interface SocialMedia {
+  instagram: string;
+  twitter: string;
+  linkedin: string;
+}
+
+interface BudgetRange {
+  min: number;
+  max: number;
+}
+
+interface TargetAudience {
+  ageRange: string;
+  interests: string[];
+  region: string;
+}
+
 interface ProfileForm {
   // Company Overview
-  logo: string
-  businessName: string
-  tagline: string
-  industry: string
-  website: string
-  socialMedia: {
-    instagram: string
-    twitter: string
-    linkedin: string
-  }
-  location: string
+  logo: string;
+  businessName: string;
+  tagline: string;
+  industry: string;
+  website: string;
+  socialMedia: SocialMedia;
+  location: string;
+  email: string;
 
   // Sponsorship Preferences
-  preferredContentTypes: string[]
-  budgetRange: {
-    min: number
-    max: number
-  }
-  targetAudience: {
-    ageRange: string
-    interests: string[]
-    region: string
-  }
-  preferredPlatforms: string[]
-  campaignGoals: string[]
+  preferredContentTypes: string[];
+  budgetRange: BudgetRange;
+  targetAudience: TargetAudience;
+  preferredPlatforms: string[];
+  campaignGoals: string[];
 
   // Internal Notes
-  notes: string
+  notes: string;
 }
 
 interface Listing {
-  id: number
-  title: string
-  budget: number
-  status: 'active' | 'draft' | 'closed'
-  applications: number
-  createdDate: string
-  public: boolean
+  id: number;
+  title: string;
+  budget: number;
+  status: 'OPEN' | 'ACTIVE' | 'DRAFT' | 'CLOSED';
+  applications: number;
+  createdDate: string;
+  public: boolean;
 }
 
 interface PastCampaign {
-  id: number
-  title: string
-  roi: number
-  engagementRate: number
-  creators: string[]
-  duration: string
-  rating: number
+  id: number;
+  title: string;
+  roi: number;
+  engagementRate: number;
+  creators: string[];
+  duration: string;
+  rating: number;
+}
+
+interface PreferencesForm {
+  budgetMin: number;
+  budgetMax: number;
+  preferredPlatforms: string[];
 }
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState('listings')
-  const [profile, setProfile] = useState<any>(null)
+  const [profile, setProfile] = useState<ProfileForm | null>(null)
   const [profileLoading, setProfileLoading] = useState(true)
   const [profileError, setProfileError] = useState<string | null>(null)
   const [editProfile, setEditProfile] = useState(false)
-  const [profileForm, setProfileForm] = useState<any>({})
+  const [profileForm, setProfileForm] = useState<Partial<ProfileForm>>({})
 
-  const [listings, setListings] = useState<any[]>([])
+  const [listings, setListings] = useState<Listing[]>([])
   const [listingsLoading, setListingsLoading] = useState(true)
   const [listingsError, setListingsError] = useState<string | null>(null)
   const [listingFilter, setListingFilter] = useState<'ALL'|'ACTIVE'|'DRAFT'|'CLOSED'>('ALL')
@@ -109,10 +122,10 @@ export default function ProfilePage() {
   ])
 
   const [editPrefs, setEditPrefs] = useState(false)
-  const [prefsForm, setPrefsForm] = useState({
-    budgetMin: profile?.budgetRange?.min || 0,
-    budgetMax: profile?.budgetRange?.max || 0,
-    preferredPlatforms: profile?.preferredPlatforms || [],
+  const [prefsForm, setPrefsForm] = useState<PreferencesForm>({
+    budgetMin: profile?.budgetRange?.min ?? 0,
+    budgetMax: profile?.budgetRange?.max ?? 0,
+    preferredPlatforms: profile?.preferredPlatforms ?? [],
   })
 
   const [uploadingImage, setUploadingImage] = useState(false)
@@ -126,7 +139,7 @@ export default function ProfilePage() {
         setProfileLoading(true)
         const res = await fetch('/api/auth/profile')
         if (!res.ok) throw new Error('Failed to fetch profile')
-        const data = await res.json()
+        const data = await res.json() as ProfileForm
         setProfile(data)
         setProfileForm(data)
       } catch (e: any) {
@@ -144,7 +157,7 @@ export default function ProfilePage() {
         setListingsLoading(true)
         const res = await fetch('/api/listings?mine=1')
         if (!res.ok) throw new Error('Failed to fetch listings')
-        const data = await res.json()
+        const data = await res.json() as Listing[]
         setListings(data)
       } catch (e: any) {
         setListingsError(e.message)
@@ -156,18 +169,22 @@ export default function ProfilePage() {
   }, [])
 
   useEffect(() => {
-    setPrefsForm({
-      budgetMin: profile?.budgetRange?.min || 0,
-      budgetMax: profile?.budgetRange?.max || 0,
-      preferredPlatforms: profile?.preferredPlatforms || [],
-    })
+    if (profile) {
+      setPrefsForm({
+        budgetMin: profile.budgetRange?.min ?? 0,
+        budgetMax: profile.budgetRange?.max ?? 0,
+        preferredPlatforms: profile.preferredPlatforms ?? [],
+      })
+    }
   }, [profile])
 
-  const handleProfileChange = (field: string, value: any) => {
-    setProfileForm((prev: Record<string, any>) => ({ ...prev, [field]: value }))
+  const handleProfileChange = (field: keyof ProfileForm, value: any) => {
+    setProfileForm(prev => ({ ...prev, [field]: value }))
   }
 
   const handleProfileSave = async () => {
+    if (!profileForm) return;
+
     try {
       setProfileLoading(true)
       const res = await fetch('/api/auth/profile', {
@@ -176,7 +193,7 @@ export default function ProfilePage() {
         body: JSON.stringify(profileForm),
       })
       if (!res.ok) throw new Error('Failed to save profile')
-      const data = await res.json()
+      const data = await res.json() as ProfileForm
       setProfile(data)
       setEditProfile(false)
     } catch (e: any) {
@@ -186,7 +203,7 @@ export default function ProfilePage() {
     }
   }
 
-  const handlePrefsChange = (field: string, value: any) => {
+  const handlePrefsChange = (field: keyof PreferencesForm, value: any) => {
     setPrefsForm(prev => ({ ...prev, [field]: value }))
   }
 
@@ -194,42 +211,79 @@ export default function ProfilePage() {
     setPrefsForm(prev => ({
       ...prev,
       preferredPlatforms: prev.preferredPlatforms.includes(platform)
-        ? prev.preferredPlatforms.filter((p: string) => p !== platform)
+        ? prev.preferredPlatforms.filter(p => p !== platform)
         : [...prev.preferredPlatforms, platform],
     }))
   }
 
   const handlePrefsSave = async () => {
-    const updated = {
-      ...profileForm,
-      budgetRange: { min: prefsForm.budgetMin, max: prefsForm.budgetMax },
-      preferredPlatforms: prefsForm.preferredPlatforms,
-    }
-    const res = await fetch('/api/auth/profile', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated),
-    })
-    if (res.ok) {
-      const data = await res.json()
+    if (!profile) return;
+
+    try {
+      setProfileLoading(true)
+      const res = await fetch('/api/auth/profile/preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          budgetRange: {
+            min: prefsForm.budgetMin,
+            max: prefsForm.budgetMax,
+          },
+          preferredPlatforms: prefsForm.preferredPlatforms,
+        }),
+      })
+      if (!res.ok) throw new Error('Failed to save preferences')
+      const data = await res.json() as ProfileForm
       setProfile(data)
-      setProfileForm(data)
       setEditPrefs(false)
+    } catch (e: any) {
+      setProfileError(e.message)
+    } finally {
+      setProfileLoading(false)
     }
   }
 
-  const filteredListings = listings.filter(l => {
-    if (listingFilter === 'ALL') return true
-    if (listingFilter === 'ACTIVE') return l.status === 'OPEN' || l.status === 'ACTIVE'
-    if (listingFilter === 'DRAFT') return l.status === 'DRAFT'
-    if (listingFilter === 'CLOSED') return l.status === 'CLOSED'
-    return true
-  })
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      setUploadingImage(true)
+      const formData = new FormData()
+      formData.append('image', file)
+
+      const res = await fetch('/api/auth/profile/logo', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!res.ok) throw new Error('Failed to upload image')
+      const data = await res.json()
+      setProfile(prev => prev ? { ...prev, logo: data.url } : null)
+      setProfileForm(prev => ({ ...prev, logo: data.url }))
+    } catch (e: any) {
+      setProfileError(e.message)
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
+  const handleImageClick = () => {
+    fileInputRef.current?.click()
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setProfileForm((prev: Record<string, any>) => ({ ...prev, [name]: value }))
+    handleProfileChange(name as keyof ProfileForm, value)
   }
+
+  const filteredListings = listings.filter(listing => {
+    if (listingFilter === 'ALL') return true
+    if (listingFilter === 'ACTIVE') return listing.status === 'ACTIVE'
+    if (listingFilter === 'DRAFT') return listing.status === 'DRAFT'
+    if (listingFilter === 'CLOSED') return listing.status === 'CLOSED'
+    return true
+  })
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#fff4e3' }}>
@@ -250,22 +304,22 @@ export default function ProfilePage() {
                     <div className="flex flex-col items-center text-center mb-6">
                       {/* Avatar */}
                       <div className="relative mb-4">
-                        {profile?.image ? (
+                        {profile?.logo ? (
                           <img
-                            src={profile.image}
-                            alt={profile?.name || 'Profile'}
+                            src={profile.logo}
+                            alt={profile?.businessName || 'Profile'}
                             className="h-32 w-32 rounded-full object-cover border-4 border-white shadow-sm"
                             style={{ backgroundColor: '#ffd97a' }}
                           />
                         ) : (
                           <div className="h-32 w-32 flex items-center justify-center rounded-full border-4 border-white shadow-sm bg-gray-200">
-                            <DefaultAvatar name={profile?.name || profile?.businessName || profile?.email || ''} />
-                        </div>
+                            <DefaultAvatar name={profile?.businessName || profile?.email || ''} />
+                          </div>
                         )}
                         <button
                           type="button"
                           className="absolute bottom-0 right-0 rounded-full bg-white p-2 border border-gray-200 shadow-sm hover:bg-gray-50"
-                          onClick={() => fileInputRef.current?.click()}
+                          onClick={handleImageClick}
                           disabled={uploadingImage}
                         >
                           <CameraIcon className="h-5 w-5" style={{ color: '#ffb600' }} />
@@ -275,31 +329,10 @@ export default function ProfilePage() {
                           accept="image/*"
                           ref={fileInputRef}
                           style={{ display: 'none' }}
-                          onChange={async (e) => {
-                            const file = e.target.files?.[0]
-                            if (!file) return
-                            setUploadingImage(true)
-                            const reader = new FileReader()
-                            reader.onloadend = async () => {
-                              const base64 = reader.result
-                              // Save to backend
-                              const res = await fetch('/api/auth/profile', {
-                                method: 'PUT',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ ...profileForm, image: base64 }),
-                              })
-                              if (res.ok) {
-                                const data = await res.json()
-                                setProfile(data)
-                                setProfileForm(data)
-                              }
-                              setUploadingImage(false)
-                            }
-                            reader.readAsDataURL(file)
-                          }}
+                          onChange={handleImageUpload}
                         />
                       </div>
-                      <h2 className="text-2xl font-bold text-gray-900">{profile?.name || profile?.businessName || profile?.email || ''}</h2>
+                      <h2 className="text-2xl font-bold text-gray-900">{profile?.businessName || profile?.email || ''}</h2>
                       <p className="text-gray-500 mt-1">{profile?.tagline || ''}</p>
                       <div className="flex items-center mt-2 space-x-2">
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-gray-900" style={{ backgroundColor: '#ffd699' }}>
@@ -479,80 +512,34 @@ export default function ProfilePage() {
                         <div className="text-red-600">{listingsError}</div>
                       ) : (
                       <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Title
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Budget
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Status
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Applications
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Created Date
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Actions
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                              {filteredListings.map((listing, index) => (
-                              <tr key={listing.id} className={index % 2 === 0 ? 'bg-white' : 'bg-[#fff4e3]'}>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                  {listing.title}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  ${listing.budget}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  <span
-                                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full text-gray-900 ${
-                                      listing.status === 'active'
-                                        ? 'bg-[#ffd97a]'
-                                        : listing.status === 'draft'
-                                        ? 'bg-[#ffd699]'
-                                        : 'bg-gray-100 text-gray-800'
-                                    }`}
-                                  >
-                                    {listing.status}
-                                  </span>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  {listing.applications}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  {listing.createdDate}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  <div className="flex space-x-2">
-                                      <button className="hover:text-[#ffb600]" onClick={() => router.push(`/dashboard/my-listings/${listing.id}/edit`)}>
-                                      <PencilIcon className="h-5 w-5" />
-                                    </button>
-                                      <button className="hover:text-[#ffb600]" onClick={async () => {
-                                        const updated = await fetch(`/api/listings/${listing.id}/visibility`, {
-                                          method: 'PUT',
-                                          headers: { 'Content-Type': 'application/json' },
-                                          body: JSON.stringify({ public: !listing.public }),
-                                        })
-                                        if (updated.ok) {
-                                          setListings((prev: any[]) => prev.map(l => l.id === listing.id ? { ...l, public: !l.public } : l))
-                                        }
-                                      }}>
-                                        {listing.public ? <EyeIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5 text-gray-300" />}
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                        {filteredListings.map(listing => (
+                          <div key={listing.id} className="bg-white rounded-lg shadow-sm p-4">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h3 className="text-lg font-semibold text-gray-900">{listing.title}</h3>
+                                <p className="text-gray-500">Budget: ${listing.budget}</p>
+                              </div>
+                              <span className={`px-2 py-1 rounded-full text-sm ${
+                                listing.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
+                                listing.status === 'DRAFT' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {listing.status}
+                              </span>
+                            </div>
+                            <div className="mt-4 flex justify-between items-center">
+                              <div className="text-sm text-gray-500">
+                                {listing.applications} applications
+                              </div>
+                              <button
+                                onClick={() => router.push(`/dashboard/my-listings/${listing.id}`)}
+                                className="text-blue-600 hover:text-blue-800"
+                              >
+                                View Details
+                              </button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                       )}
                     </div>

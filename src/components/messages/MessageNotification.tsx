@@ -4,8 +4,12 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { BellIcon } from '@heroicons/react/24/outline';
 
+interface UnreadCountResponse {
+  unreadCount: number;
+}
+
 export default function MessageNotification() {
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
   const router = useRouter();
 
   useEffect(() => {
@@ -17,10 +21,11 @@ export default function MessageNotification() {
           throw new Error('Failed to fetch unread messages');
         }
         
-        const data = await response.json();
-        setUnreadCount(data.unreadCount);
+        const data = await response.json() as UnreadCountResponse;
+        setUnreadCount(data.unreadCount ?? 0);
       } catch (err) {
         console.error('Error fetching unread messages:', err);
+        setUnreadCount(0);
       }
     };
 
