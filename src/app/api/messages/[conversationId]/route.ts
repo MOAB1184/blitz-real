@@ -3,6 +3,26 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 
+interface Participant {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+  conversationId: string;
+  userId: string;
+  hasUnread: boolean;
+}
+
+interface Message {
+  id: string;
+  content: string;
+  senderId: string;
+  conversationId: string;
+  createdAt: Date;
+  sender: {
+    name: string | null;
+  };
+}
+
 // GET /api/messages/[conversationId]
 // Get all messages for a specific conversation
 export async function GET(
@@ -132,7 +152,7 @@ export async function POST(
     }
 
     const isParticipant = conversation.participants.some(
-      (p) => p.userId === senderId
+      (p: Participant) => p.userId === senderId
     );
 
     if (!isParticipant) {
@@ -144,7 +164,7 @@ export async function POST(
 
     // Get the other participants
     const otherParticipants = conversation.participants.filter(
-      (p) => p.userId !== senderId
+      (p: Participant) => p.userId !== senderId
     );
 
     if (otherParticipants.length === 0) {
