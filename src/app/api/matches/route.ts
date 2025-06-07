@@ -40,13 +40,13 @@ export async function GET(req: Request) {
       where: { role: 'CREATOR' },
       include: { listings: { include: { categories: true } }, applications: true }
     })
-    matches = creators.map(creator => {
+    matches = creators.map((creator: any) => {
       // Last activity: latest of updatedAt, last application, last listing
-      const lastApp = creator.applications.reduce((max, a) => a.updatedAt > max ? a.updatedAt : max, creator.updatedAt)
-      const lastListing = creator.listings.reduce((max, l) => l.updatedAt > max ? l.updatedAt : max, creator.updatedAt)
+      const lastApp = creator.applications.reduce((max: Date, a: any) => a.updatedAt > max ? a.updatedAt : max, creator.updatedAt)
+      const lastListing = creator.listings.reduce((max: Date, l: any) => l.updatedAt > max ? l.updatedAt : max, creator.updatedAt)
       const lastActivity = new Date(Math.max(new Date(lastApp).getTime(), new Date(lastListing).getTime(), new Date(creator.updatedAt).getTime()))
       // Engagement: # of applications in last 30 days
-      const engagement = creator.applications.filter(a => new Date(a.createdAt) > new Date(Date.now() - 30*24*60*60*1000)).length / 30 * 100
+      const engagement = creator.applications.filter((a: any) => new Date(a.createdAt) > new Date(Date.now() - 30*24*60*60*1000)).length / 30 * 100
       return {
         id: creator.id,
         name: creator.name,
