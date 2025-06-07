@@ -55,21 +55,22 @@ export async function GET(req: Request) {
         role: creator.role,
         lastActivity: daysAgo(lastActivity),
         engagement: engagement.toFixed(1),
-        // Add more fields as needed
       }
     })
   } else if (user.role === 'CREATOR') {
     // Find sponsors with shared categories or region
-    const creatorCategories = user.listings.flatMap(l => Array.isArray((l as any).categories) ? (l as any).categories.map((c: any) => c.categoryId) : [])
+    const creatorCategories = user.listings.flatMap((l: any) => 
+      l.categories.map((c: any) => c.category.id)
+    )
     const sponsors = await prisma.user.findMany({
       where: { role: 'SPONSOR' },
       include: { listings: { include: { categories: true } }, applications: true }
     })
-    matches = sponsors.map(sponsor => {
-      const lastApp = sponsor.applications.reduce((max, a) => a.updatedAt > max ? a.updatedAt : max, sponsor.updatedAt)
-      const lastListing = sponsor.listings.reduce((max, l) => l.updatedAt > max ? l.updatedAt : max, sponsor.updatedAt)
+    matches = sponsors.map((sponsor: any) => {
+      const lastApp = sponsor.applications.reduce((max: Date, a: any) => a.updatedAt > max ? a.updatedAt : max, sponsor.updatedAt)
+      const lastListing = sponsor.listings.reduce((max: Date, l: any) => l.updatedAt > max ? l.updatedAt : max, sponsor.updatedAt)
       const lastActivity = new Date(Math.max(new Date(lastApp).getTime(), new Date(lastListing).getTime(), new Date(sponsor.updatedAt).getTime()))
-      const engagement = sponsor.listings.filter(l => new Date(l.createdAt) > new Date(Date.now() - 30*24*60*60*1000)).length / 30 * 100
+      const engagement = sponsor.listings.filter((l: any) => new Date(l.createdAt) > new Date(Date.now() - 30*24*60*60*1000)).length / 30 * 100
       return {
         id: sponsor.id,
         name: sponsor.name,
