@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import prisma from '@/lib/prisma'
-import type { Prisma } from '@prisma/client'
 
 interface CategoryWithRelations {
   id: string;
@@ -49,7 +48,17 @@ interface UserWithRelations {
   updatedAt: Date;
 }
 
-function daysAgo(date: Date) {
+interface MatchResult {
+  id: string;
+  name: string;
+  email: string;
+  image: string | null;
+  role: string;
+  lastActivity: string;
+  engagement: string;
+}
+
+function daysAgo(date: Date): string {
   const now = new Date()
   const diff = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
   if (diff === 0) return 'Today'
@@ -84,7 +93,7 @@ export async function GET(req: Request) {
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
   // Determine role and matching logic
-  let matches: any[] = []
+  let matches: MatchResult[] = []
   if (user.role === 'SPONSOR') {
     // Find creators with shared categories or region
     const sponsorCategories = user.listings.flatMap((l: ListingWithRelations) => 
@@ -109,7 +118,7 @@ export async function GET(req: Request) {
         }
       }
     })
-    matches = creators.map((creator: UserWithRelations) => {
+    matches = creators.map((creator: UserWithRelations): MatchResult => {
       // Last activity: latest of updatedAt, last application, last listing
       const lastApp = creator.applications.reduce((max: Date, a: ApplicationWithRelations) => a.updatedAt > max ? a.updatedAt : max, creator.updatedAt)
       const lastListing = creator.listings.reduce((max: Date, l: ListingWithRelations) => l.updatedAt > max ? l.updatedAt : max, creator.updatedAt)
@@ -150,7 +159,7 @@ export async function GET(req: Request) {
         }
       }
     })
-    matches = sponsors.map((sponsor: UserWithRelations) => {
+    matches = sponsors.map((sponsor: UserWithRelations): MatchResult => {
       const lastApp = sponsor.applications.reduce((max: Date, a: ApplicationWithRelations) => a.updatedAt > max ? a.updatedAt : max, sponsor.updatedAt)
       const lastListing = sponsor.listings.reduce((max: Date, l: ListingWithRelations) => l.updatedAt > max ? l.updatedAt : max, sponsor.updatedAt)
       const lastActivity = new Date(Math.max(new Date(lastApp).getTime(), new Date(lastListing).getTime(), new Date(sponsor.updatedAt).getTime()))
@@ -167,4 +176,5 @@ export async function GET(req: Request) {
     })
   }
   return NextResponse.json(matches)
-} 
+}
+

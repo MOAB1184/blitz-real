@@ -5,6 +5,7 @@ import prisma from '@/lib/prisma';
 
 interface Listing {
   id: string;
+  title?: string;
   audienceProfile?: string;
   category?: string;
   requirements?: string[];
@@ -30,28 +31,28 @@ interface Sponsor {
   listings: Listing[];
 }
 
-function calculateMatchScore(creator, sponsor, listings) {
-  // Example: 40% audience, 30% value, 30% requirements
+function calculateMatchScore(creator: Creator, sponsor: Sponsor, listings: Listing[]): number {
+  // Calculate match score based on audience, value, and requirements
   let audienceScore = 0;
   let valueScore = 0;
   let requirementsScore = 0;
 
-  // Audience overlap (dummy: if any audienceProfile matches, 100, else 0)
+  // Audience overlap
   if (creator.audienceProfile && listings.some(l => l.audienceProfile && l.audienceProfile.includes(creator.audienceProfile))) {
     audienceScore = 100;
   } else {
-    audienceScore = 60; // fallback
+    audienceScore = 60;
   }
 
-  // Value alignment (dummy: if any category matches, 100, else 0)
+  // Value alignment
   if (creator.categories && listings.some(l => l.category && creator.categories.includes(l.category))) {
     valueScore = 100;
   } else {
     valueScore = 60;
   }
 
-  // Requirements match (dummy: if creator meets min followers, 100, else 0)
-  if (creator.followers && listings.some(l => l.requirements && l.requirements.some(r => r.toLowerCase().includes('min') && creator.followers >= parseInt(r.replace(/\D/g, ''))))) {
+  // Requirements match
+  if (creator.followers && listings.some(l => l.requirements && l.requirements.some(r => r.toLowerCase().includes('min') && creator.followers && creator.followers >= parseInt(r.replace(/\D/g, ''))))) {
     requirementsScore = 100;
   } else {
     requirementsScore = 60;
@@ -68,7 +69,13 @@ export async function GET(req: Request) {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    include: { listings: true }
+    include: { 
+      listings: {
+        include: {
+          applications: true
+        }
+      }
+    }
   });
 
   if (!user) {
@@ -77,25 +84,31 @@ export async function GET(req: Request) {
 
   const listings = user.listings;
 
-  // Find creators that match the sponsor's requirements
-  const creators = await prisma.user.findMany({
-    where: { role: 'CREATOR' },
-    include: { listings: true }
+  // Find sponsors that match the creator's profile
+  const sponsors = await prisma.user.findMany({
+    where: { role: 'SPONSOR' },
+    include: { 
+      listings: {
+        include: {
+          applications: true
+        }
+      }
+    }
   });
 
-  const matches = creators.filter((creator: Creator) => {
+  const matches = sponsors.filter((sponsor: Sponsor) => {
     // Match by audience profile
-    if (creator.audienceProfile && listings.some((l: Listing) => l.audienceProfile && l.audienceProfile.includes(creator.audienceProfile))) {
+    if (user.audienceProfile && sponsor.listings.some((l: Listing) => l.audienceProfile && l.audienceProfile.includes(user.audienceProfile))) {
       return true;
     }
 
     // Match by category
-    if (creator.categories && listings.some((l: Listing) => l.category && creator.categories?.includes(l.category))) {
+    if (user.categories && sponsor.listings.some((l: Listing) => l.category && user.categories?.includes(l.category))) {
       return true;
     }
 
     // Match by follower count
-    if (creator.followers && listings.some((l: Listing) => l.requirements && l.requirements.some((r: string) => r.toLowerCase().includes('min') && creator.followers && creator.followers >= parseInt(r.replace(/\D/g, ''))))) {
+    if (user.followers && sponsor.listings.some((l: Listing) => l.requirements && l.requirements.some((r: string) => r.toLowerCase().includes('min') && user.followers && user.followers >= parseInt(r.replace(/\D/g, ''))))) {
       return true;
     }
 
@@ -103,16 +116,18 @@ export async function GET(req: Request) {
   });
 
   // Get detailed sponsor data for each match
-  const sponsorData = await Promise.all(matches.map(async (sponsor: Sponsor) => {
+  const sponsorData = matches.map((sponsor: Sponsor) => {
     const successfulPartnerships = sponsor.listings.reduce((acc: number, l: Listing) => acc + l.applications.filter((a: Application) => a.status === 'ACCEPTED').length, 0);
     const totalListings = sponsor.listings.length;
     const budget = sponsor.listings.reduce((acc: number, l: Listing) => acc + (l.budget || 0), 0);
+    const matchScore = calculateMatchScore(user as Creator, sponsor, sponsor.listings);
 
     return {
       id: sponsor.id,
       name: sponsor.name,
       email: sponsor.email,
       image: sponsor.image,
+      matchScore,
       stats: {
         successfulPartnerships,
         totalListings,
@@ -120,11 +135,15 @@ export async function GET(req: Request) {
       },
       listings: sponsor.listings.map((l: Listing) => ({
         id: l.id,
-        title: l.title,
-        budget: l.budget
+        title: l.title || 'Untitled Listing',
+        budget: l.budget || 0
       }))
     };
-  }));
+  });
+
+  // Sort by match score descending
+  sponsorData.sort((a, b) => b.matchScore - a.matchScore);
 
   return NextResponse.json(sponsorData);
-} 
+}
+

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
-import type { Prisma } from '@prisma/client';
 
 interface Participant {
   id: string;
@@ -135,7 +134,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Make sure the current user is included in the participants
-    const allParticipantIds = Array.from(new Set([session.user.id, ...participantIds]));
+    const participantSet = new Set([session.user.id, ...participantIds]);
+    const allParticipantIds = Array.from(participantSet);
 
     // Check if a conversation already exists with these exact participants
     const existingConversations = await prisma.conversation.findMany({
@@ -197,5 +197,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to create conversation' }, { status: 500 });
   }
 }
-
 
