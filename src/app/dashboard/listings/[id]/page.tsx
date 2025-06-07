@@ -34,28 +34,31 @@ export default function ListingPage({ params }: { params: { id: string } }) {
   const [isApplying, setIsApplying] = useState(false)
   const [hasApplied, setHasApplied] = useState(false)
 
-  useEffect(() => {
-    const fetchListing = async () => {
-      try {
-        const res = await fetch(`/api/listings/${params.id}`)
-        if (!res.ok) throw new Error('Failed to fetch listing')
-        const data = await res.json()
-        setListing(data)
-        
-        // Check if user has already applied
-        if (session?.user?.id) {
-          const applicationRes = await fetch(`/api/applications/check?listingId=${params.id}`)
-          if (applicationRes.ok) {
-            const { hasApplied } = await applicationRes.json()
-            setHasApplied(hasApplied)
-          }
+  const fetchListing = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const res = await fetch(`/api/listings/${params.id}`)
+      if (!res.ok) throw new Error('Failed to fetch listing')
+      const data = await res.json()
+      setListing(data)
+      
+      // Check if user has already applied
+      if (session?.user?.id) {
+        const applicationRes = await fetch(`/api/applications/check?listingId=${params.id}`)
+        if (applicationRes.ok) {
+          const { hasApplied } = await applicationRes.json()
+          setHasApplied(hasApplied)
         }
-      } catch (e: any) {
-        setError(e.message)
-      } finally {
-        setLoading(false)
       }
+    } catch (e: any) {
+      setError(e.message)
+    } finally {
+      setLoading(false)
     }
+  }
+
+  useEffect(() => {
     if (params.id) fetchListing()
   }, [params.id, session?.user?.id])
 
