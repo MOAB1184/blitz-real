@@ -1,7 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import connectDB from '@/lib/mongodb';
-import User from '@/models/User';
+import { PrismaClient } from '@prisma/client';
+import { compare } from 'bcryptjs';
 import { generateToken } from '@/lib/jwt';
+
+const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -19,21 +21,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     password = req.body.password;
   }
 
-  await connectDB();
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email }
+    });
 
-  const user = await User.findOne({ email });
-  if (!user) {
-    return res.redirect(302, '/login?error=1');
-  }
-  if (!user.isVerified) {
-    return res.redirect(302, '/login?error=1');
-  }
-  const isMatch = await user.comparePassword(password);
-  if (!isMatch) {
-    return res.redirect(302, '/login?error=1');
-  }
+    if (!user) {
+      return res.redirect(302, '/login?error=1');
+    }
 
-  const token = generateToken({ userId: user._id });
-  res.setHeader('Set-Cookie', `token=${token}; HttpOnly; Path=/; Max-Age=${60 * 60 * 24 * 7}; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
-  return res.redirect(302, '/dashboard');
+    if (!user.isVerified) {
+      return res.redirect(302, '/login?error=1');
+    }
+
+    const isMatch = await compare(password, user.password);
+    if (!isMatch) {
+      return res.redirect(302, '/login?error=1');
+    }
+
+    const token = generateToken({ userId: user.id });
+    res.setHeader('Set-Cookie', `token=${token}; HttpOnly; Path=/; Max-Age=${60 * 60 * 24 * 7}; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
+    return res.redirect(302, '/dashboard');
+  } catch (error) {
+    console.error('Login error:', error);
+    return res.redirect(302, '/login?error=1');
+  } finally {
+    await prisma.$disconnect();
+  }
 } 
