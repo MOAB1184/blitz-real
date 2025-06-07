@@ -2,28 +2,26 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
 
 interface Participant {
   id: string;
-  createdAt: Date;
-  updatedAt: Date;
-  conversationId: string;
-  userId: string;
-  hasUnread: boolean;
+  name: string | null;
+  image: string | null;
 }
 
 interface Conversation {
   id: string;
   createdAt: Date;
   updatedAt: Date;
-  participants: Participant[];
+  participants: {
+    user: Participant;
+  }[];
   messages: {
     id: string;
     content: string;
     createdAt: Date;
-    sender: {
-      name: string | null;
-    };
+    senderId: string;
   }[];
 }
 
@@ -32,6 +30,8 @@ interface UserParticipation {
   userId: string;
   conversationId: string;
   hasUnread: boolean;
+  createdAt: Date;
+  updatedAt: Date;
   conversation: Conversation;
 }
 
@@ -45,68 +45,69 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = session.user.id;
-
     // Get all conversations where the user is a participant
     const userParticipations = await prisma.participant.findMany({
-      where: {
-        userId: userId,
-      },
+      where: { userId: session.user.id },
       include: {
         conversation: {
           include: {
-            participants: true,
-            messages: {
-              orderBy: {
-                createdAt: 'desc',
-              },
-              take: 1,
+            participants: {
               include: {
-                sender: {
+                user: {
                   select: {
+                    id: true,
                     name: true,
-                  },
-                },
-              },
+                    image: true
+                  }
+                }
+              }
             },
-          },
-        },
+            messages: {
+              orderBy: { createdAt: 'desc' },
+              take: 1,
+              select: {
+                id: true,
+                content: true,
+                createdAt: true,
+                senderId: true
+              }
+            }
+          }
+        }
       },
       orderBy: {
         conversation: {
-          updatedAt: 'desc',
-        },
-      },
+          updatedAt: 'desc'
+        }
+      }
     });
 
-    // Format the conversations for the client
+    // Format the conversations
     const conversations = userParticipations.map((participation: UserParticipation) => {
-      const otherParticipants = participation.conversation.participants.filter(
-        (p: Participant) => p.userId !== userId
-      );
+      const conversation = participation.conversation;
+      const lastMessage = conversation.messages[0];
+      const otherParticipants = conversation.participants
+        .filter((p: { user: Participant }) => p.user.id !== session.user.id)
+        .map((p: { user: Participant }) => p.user);
 
       return {
-        id: participation.conversation.id,
-        lastMessage: participation.conversation.messages[0] ? {
-          content: participation.conversation.messages[0].content,
-          sender: participation.conversation.messages[0].sender.name,
-          timestamp: participation.conversation.messages[0].createdAt
+        id: conversation.id,
+        lastMessage: lastMessage ? {
+          id: lastMessage.id,
+          content: lastMessage.content,
+          createdAt: lastMessage.createdAt,
+          senderId: lastMessage.senderId
         } : null,
-        participants: otherParticipants.map((p: Participant) => ({
-          id: p.userId,
-          hasUnread: p.hasUnread
-        })),
-        updatedAt: participation.conversation.updatedAt
+        participants: otherParticipants,
+        updatedAt: conversation.updatedAt,
+        hasUnread: participation.hasUnread
       };
     });
 
     return NextResponse.json(conversations);
   } catch (error) {
     console.error('Error fetching conversations:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch conversations' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch conversations' }, { status: 500 });
   }
 }
 
@@ -122,59 +123,71 @@ export async function POST(req: NextRequest) {
 
     const { participantIds } = await req.json();
 
-    if (!participantIds || !Array.isArray(participantIds) || participantIds.length === 0) {
-      return NextResponse.json(
-        { error: 'Participant IDs are required' },
-        { status: 400 }
-      );
+    if (!Array.isArray(participantIds) || participantIds.length === 0) {
+      return NextResponse.json({ error: 'Invalid participant IDs' }, { status: 400 });
     }
 
     // Make sure the current user is included in the participants
-    const allParticipantIds = [...new Set([session.user.id, ...participantIds])];
+    const allParticipantIds = Array.from(new Set([session.user.id, ...participantIds]));
 
     // Check if a conversation already exists with these exact participants
     const existingConversations = await prisma.conversation.findMany({
-      include: {
-        participants: true,
+      where: {
+        participants: {
+          every: {
+            userId: {
+              in: allParticipantIds
+            }
+          }
+        }
       },
+      include: {
+        participants: true
+      }
     });
 
-    const existingConversation = existingConversations.find((conversation) => {
-      const participantIds = conversation.participants.map((p) => p.userId);
+    // Find a conversation that has exactly these participants
+    const existingConversation = existingConversations.find(conversation => {
+      const conversationParticipantIds = conversation.participants.map(p => p.userId);
       return (
-        participantIds.length === allParticipantIds.length &&
-        allParticipantIds.every((id) => participantIds.includes(id))
+        conversationParticipantIds.length === allParticipantIds.length &&
+        allParticipantIds.every(id => conversationParticipantIds.includes(id))
       );
     });
 
     if (existingConversation) {
-      return NextResponse.json({
-        id: existingConversation.id,
-        message: 'Conversation already exists',
-      });
+      return NextResponse.json(existingConversation);
     }
 
     // Create a new conversation
-    const conversation = await prisma.conversation.create({
+    const newConversation = await prisma.conversation.create({
       data: {
         participants: {
-          create: allParticipantIds.map((userId) => ({
+          create: allParticipantIds.map(userId => ({
             userId,
-          })),
-        },
+            hasUnread: userId !== session.user.id
+          }))
+        }
       },
+      include: {
+        participants: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                image: true
+              }
+            }
+          }
+        }
+      }
     });
 
-    return NextResponse.json({
-      id: conversation.id,
-      message: 'Conversation created successfully',
-    });
+    return NextResponse.json(newConversation);
   } catch (error) {
     console.error('Error creating conversation:', error);
-    return NextResponse.json(
-      { error: 'Failed to create conversation' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to create conversation' }, { status: 500 });
   }
 }
 
