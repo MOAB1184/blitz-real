@@ -2,20 +2,17 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import prisma from '@/lib/prisma'
+import type { Listing, Category } from '@prisma/client'
 
-interface Category {
+interface CategoryWithRelations {
+  id: string;
   name: string;
 }
 
-interface Listing {
-  id: string;
-  title: string;
-  description: string;
-  type: string;
-  budget: number;
-  requirements: string[];
-  perks: string[];
-  categories: Category[];
+interface ListingWithRelations extends Listing {
+  categories: {
+    category: CategoryWithRelations;
+  }[];
 }
 
 export async function POST(req: Request) {
@@ -67,7 +64,11 @@ export async function POST(req: Request) {
             image: true
           }
         },
-        categories: true
+        categories: {
+          include: {
+            category: true
+          }
+        }
       }
     })
 
