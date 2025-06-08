@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 import { CheckIcon, XMarkIcon, UserGroupIcon, CalendarDaysIcon, MapPinIcon, SparklesIcon, MagnifyingGlassIcon, DocumentTextIcon, CreditCardIcon, ChartBarIcon, DocumentMinusIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'

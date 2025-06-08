@@ -2,7 +2,7 @@ export const runtime = 'nodejs';
 
 import './globals.css'
 import { Inter } from 'next/font/google'
-import SessionProvider from '@/components/providers/SessionProvider'
+import { Providers } from './providers'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
@@ -23,9 +23,9 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} min-h-screen bg-[#fff4e3]`}>
-        <SessionProvider session={session}>
-        {children}
-        </SessionProvider>
+        <Providers session={session}>
+          {children}
+        </Providers>
       </body>
     </html>
   )
