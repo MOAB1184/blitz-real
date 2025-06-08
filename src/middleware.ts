@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { verifyToken } from './lib/jwt';
+import { getToken } from 'next-auth/jwt';
 
 export async function middleware(request: NextRequest) {
   // Get the pathname of the request
@@ -9,19 +9,9 @@ export async function middleware(request: NextRequest) {
   // Define public paths that don't require authentication
   const isPublicPath = path === '/login' || path === '/signup' || path === '/forgot-password';
 
-  // Get the token from the cookies
-  const token = request.cookies.get('token')?.value || '';
-
-  // Verify the token
-  let isAuthenticated = false;
-  try {
-    if (token) {
-      await verifyToken(token);
-      isAuthenticated = true;
-    }
-  } catch (error) {
-    isAuthenticated = false;
-  }
+  // Use NextAuth's session token
+  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+  const isAuthenticated = !!token;
 
   // Redirect logic
   if (isPublicPath && isAuthenticated) {
