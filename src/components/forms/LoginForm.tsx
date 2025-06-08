@@ -23,11 +23,13 @@ export default function LoginForm() {
     const password = formData.get('password') as string
 
     try {
+      console.log('Calling signIn...');
       const result = await signIn('credentials', {
         email,
         password,
         redirect: false,
       })
+      console.log('signIn result:', result);
 
       if (result?.error) {
         setFormError('Invalid credentials or please verify your email.')
