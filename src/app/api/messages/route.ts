@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
-import authOptions from '@/lib/authOptions';
+import { authOptions } from '@/lib/auth';
 
 // Send a message
 export async function POST(req: Request) {
@@ -16,11 +16,41 @@ export async function POST(req: Request) {
 
     const { receiverId, content } = await req.json();
 
+    // Find or create a conversation between the users
+    let conversation = await prisma.conversation.findFirst({
+      where: {
+        participants: {
+          some: {
+            AND: [
+              { userId: session.user.id },
+              { userId: receiverId }
+            ]
+          }
+        }
+      }
+    });
+
+    if (!conversation) {
+      // Create a new conversation if one doesn't exist
+      conversation = await prisma.conversation.create({
+        data: {
+          participants: {
+            create: [
+              { userId: session.user.id },
+              { userId: receiverId }
+            ]
+          }
+        }
+      });
+    }
+
+    // Create the message with the conversation ID
     const message = await prisma.message.create({
       data: {
         content,
         senderId: session.user.id,
-        receiverId
+        receiverId,
+        conversationId: conversation.id
       },
       include: {
         sender: {
@@ -40,6 +70,12 @@ export async function POST(req: Request) {
           }
         }
       }
+    });
+
+    // Update the conversation's lastMessageAt
+    await prisma.conversation.update({
+      where: { id: conversation.id },
+      data: { lastMessageAt: new Date() }
     });
 
     return NextResponse.json(message);
@@ -63,12 +99,19 @@ export async function GET(req: Request) {
       );
     }
 
+    const { searchParams } = new URL(req.url);
+    const conversationId = searchParams.get('conversationId');
+
+    if (!conversationId) {
+      return NextResponse.json(
+        { error: 'Conversation ID is required' },
+        { status: 400 }
+      );
+    }
+
     const messages = await prisma.message.findMany({
       where: {
-        OR: [
-          { senderId: session.user.id },
-          { receiverId: session.user.id }
-        ]
+        conversationId
       },
       include: {
         sender: {
