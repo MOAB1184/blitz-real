@@ -1,9 +1,19 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   try {
     const { token } = await req.json();
+
+    if (!token) {
+      return NextResponse.json(
+        { error: 'Verification token is required' },
+        { status: 400 }
+      );
+    }
 
     // Find user with verification token
     const user = await prisma.user.findFirst({
