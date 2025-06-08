@@ -197,3 +197,17 @@ model ProfileView {
   viewer    User      @relation("ProfileViews", fields: [viewerId], references: [id])
 }
 
+model UnverifiedUser {
+  id                    String    @id @default(auto()) @map("_id") @db.ObjectId
+  email                 String    @unique
+  password              String
+  name                  String
+  role                  String    @default("CREATOR")
+  verificationToken     String
+  verificationTokenExpiry DateTime
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("unverified_users")
+}
+

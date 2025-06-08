@@ -8,12 +8,16 @@ export async function POST(req: Request) {
   try {
     const { email, password, name, role } = await req.json()
 
-    // Check if user already exists
+    // Check if user already exists in either collection
     const existingUser = await prisma.user.findUnique({
       where: { email }
     })
 
-    if (existingUser) {
+    const existingUnverifiedUser = await prisma.unverifiedUser.findUnique({
+      where: { email }
+    })
+
+    if (existingUser || existingUnverifiedUser) {
       return NextResponse.json(
         { error: 'User already exists' },
         { status: 400 }
@@ -32,13 +36,13 @@ export async function POST(req: Request) {
       userRole = 'ADMIN'
     }
 
-    // Create new user
-    const user = await prisma.user.create({
+    // Create unverified user
+    const unverifiedUser = await prisma.unverifiedUser.create({
       data: {
         email,
         password: hashedPassword,
         name,
-        role: userRole as any, // Type assertion needed due to Prisma's strict typing
+        role: userRole as any,
         verificationToken,
         verificationTokenExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
       }
@@ -48,12 +52,11 @@ export async function POST(req: Request) {
     await sendVerificationEmail(email, verificationToken)
 
     return NextResponse.json({
-      message: 'User registered successfully',
+      message: 'Registration successful. Please check your email to verify your account.',
       user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role
+        email: unverifiedUser.email,
+        name: unverifiedUser.name,
+        role: unverifiedUser.role
       }
     })
   } catch (error: any) {

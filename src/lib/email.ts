@@ -1,22 +1,24 @@
-import nodemailer from 'nodemailer';
+import sgMail from '@sendgrid/mail'
+import type { MailDataRequired } from '@sendgrid/mail'
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
-  secure: process.env.SMTP_SECURE === 'true',
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+if (!process.env.SENDGRID_API_KEY) {
+  throw new Error('SENDGRID_API_KEY is not defined')
+}
+
+const FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL
+if (!FROM_EMAIL) {
+  throw new Error('SENDGRID_FROM_EMAIL is not defined')
+}
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 
 export const sendVerificationEmail = async (email: string, token: string) => {
-  const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${token}`;
-  await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/email/send`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+  const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${token}`
+  
+  try {
+    const msg: MailDataRequired = {
       to: email,
+      from: FROM_EMAIL,
       subject: 'Verify your email address',
       html: `
         <h1>Welcome to Blitz!</h1>
@@ -24,17 +26,21 @@ export const sendVerificationEmail = async (email: string, token: string) => {
         <a href="${verificationUrl}">Verify Email</a>
         <p>If you didn't create an account, you can safely ignore this email.</p>
       `
-    })
-  });
-};
+    }
+    await sgMail.send(msg)
+  } catch (error) {
+    console.error('Error sending verification email:', error)
+    throw new Error('Failed to send verification email')
+  }
+}
 
 export const sendPasswordResetEmail = async (email: string, token: string) => {
-  const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`;
-  await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/email/send`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+  const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`
+  
+  try {
+    const msg: MailDataRequired = {
       to: email,
+      from: FROM_EMAIL,
       subject: 'Reset your password',
       html: `
         <h1>Password Reset Request</h1>
@@ -43,6 +49,10 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
         <p>This link will expire in 1 hour.</p>
         <p>If you didn't request a password reset, you can safely ignore this email.</p>
       `
-    })
-  });
-}; 
+    }
+    await sgMail.send(msg)
+  } catch (error) {
+    console.error('Error sending password reset email:', error)
+    throw new Error('Failed to send password reset email')
+  }
+} 

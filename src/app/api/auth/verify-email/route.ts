@@ -15,8 +15,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Find user with verification token
-    const user = await prisma.user.findFirst({
+    // Find unverified user with valid token
+    const unverifiedUser = await prisma.unverifiedUser.findFirst({
       where: {
         verificationToken: token,
         verificationTokenExpiry: {
@@ -25,28 +25,40 @@ export async function POST(req: Request) {
       }
     });
 
-    if (!user) {
+    if (!unverifiedUser) {
       return NextResponse.json(
         { error: 'Invalid or expired verification token' },
         { status: 400 }
       );
     }
 
-    // Update user verification status
-    await prisma.user.update({
-      where: { id: user.id },
+    // Create verified user
+    const verifiedUser = await prisma.user.create({
       data: {
-        isVerified: true,
-        verificationToken: null,
-        verificationTokenExpiry: null
+        email: unverifiedUser.email,
+        password: unverifiedUser.password,
+        name: unverifiedUser.name,
+        role: unverifiedUser.role as any,
+        isVerified: true
       }
+    });
+
+    // Delete unverified user
+    await prisma.unverifiedUser.delete({
+      where: { id: unverifiedUser.id }
     });
 
     return NextResponse.json({
       message: 'Email verified successfully',
+      user: {
+        id: verifiedUser.id,
+        email: verifiedUser.email,
+        name: verifiedUser.name,
+        role: verifiedUser.role
+      }
     });
   } catch (error: any) {
-    console.error('Verification error:', error);
+    console.error('Email verification error:', error);
     return NextResponse.json(
       { error: 'Failed to verify email' },
       { status: 500 }
