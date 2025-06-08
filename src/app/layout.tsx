@@ -1,10 +1,8 @@
-export const runtime = 'nodejs';
+'use client'
 
 import './globals.css'
 import { Inter } from 'next/font/google'
-import { Providers } from './providers'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import SessionProvider from './session-provider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -13,19 +11,17 @@ export const metadata = {
   description: 'Connect with local events and creators in your community',
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const session = await getServerSession(authOptions)
-
   return (
     <html lang="en">
       <body className={`${inter.className} min-h-screen bg-[#fff4e3]`}>
-        <Providers session={session}>
+        <SessionProvider>
           {children}
-        </Providers>
+        </SessionProvider>
       </body>
     </html>
   )
