@@ -6,11 +6,6 @@ import SessionProvider from './session-provider'
 
 const inter = Inter({ subsets: ['latin'] })
 
-export const metadata = {
-  title: 'Blitz - Local Events & Creators',
-  description: 'Connect with local events and creators in your community',
-}
-
 export default function RootLayout({
   children,
 }: {
