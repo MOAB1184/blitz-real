@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
+import { hash } from 'bcryptjs'
+import { prisma } from '@/lib/prisma'
 import { sendVerificationEmail } from '@/lib/email'
-import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
+
+export const runtime = 'nodejs'
 
 export async function POST(req: Request) {
   try {
@@ -22,7 +24,7 @@ export async function POST(req: Request) {
 
     // Generate verification token
     const verificationToken = crypto.randomBytes(32).toString('hex')
-    const hashedPassword = await bcrypt.hash(password, 10)
+    const hashedPassword = await hash(password, 10)
 
     // Map role to valid enum value
     let userRole = 'CREATOR'

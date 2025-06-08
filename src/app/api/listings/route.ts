@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth'
 import prisma from '@/lib/prisma'
 import type { Prisma } from '@prisma/client'
 
+export const runtime = 'nodejs'
+
 interface CategoryWithRelations {
   id: string;
   listingId: string;
