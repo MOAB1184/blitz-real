@@ -18,8 +18,8 @@ interface ListingWithRelations {
   requirements: string[];
   perks: string[];
   status: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
   creatorId: string;
   applications: { id: string; status: string }[];
   categories: { category: Category }[];
