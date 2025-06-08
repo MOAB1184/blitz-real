@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { CheckIcon, XMarkIcon, UserGroupIcon, CalendarDaysIcon, MapPinIcon, SparklesIcon, MagnifyingGlassIcon, DocumentTextIcon, CreditCardIcon, ChartBarIcon, DocumentMinusIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'
+import { useSession } from 'next-auth/react'
 
 const stats = [
   { label: 'Businesses Served', value: '5,000+' },
@@ -141,6 +142,8 @@ const featuredCreators = [
 ]
 
 export default function Home() {
+  const { data: session } = useSession()
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--background)' }}>
       {/* Header */}
@@ -153,16 +156,24 @@ export default function Home() {
               </Link>
             </div>
             <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
-              <Link href="/login" className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
-                Login
-              </Link>
-              <Link
-                href="/signup"
-                className="ml-4 rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90"
-                style={{ backgroundColor: 'var(--primary)' }}
-              >
-                Sign Up
-              </Link>
+              {session ? (
+                <Link href="/dashboard" className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+                  Dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link href="/login" className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+                    Login
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="ml-4 rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90"
+                    style={{ backgroundColor: 'var(--primary)' }}
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </nav>
