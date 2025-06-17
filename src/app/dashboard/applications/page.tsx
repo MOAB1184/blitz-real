@@ -22,6 +22,8 @@ interface Application {
     type: string
     budget: number
     status: string
+    creatorId?: string
+    sponsorId?: string
   }
 }
 
@@ -153,7 +155,7 @@ export default function ApplicationsPage() {
                         </div>
                       </div>
                       <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
-                        <div>Applied: {new Date(application.date).toLocaleDateString()}</div>
+                        <div>Applied: {application.date && !isNaN(Date.parse(application.date)) ? new Date(application.date).toLocaleDateString() : '-'}</div>
                         <div>Listing Status: {application.listing.status}</div>
                       </div>
                       <div className="mt-4 flex gap-2">
@@ -164,14 +166,6 @@ export default function ApplicationsPage() {
                         >
                           View Listing
                         </button>
-                        {statusKey === 'pending' && (
-                          <button 
-                            onClick={() => window.location.href = `/dashboard/messages?listing=${application.listing.id}`}
-                            className="px-3 py-1 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
-                          >
-                            Message Sponsor
-                          </button>
-                        )}
                       </div>
                     </div>
                   )

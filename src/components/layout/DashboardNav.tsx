@@ -1,9 +1,10 @@
-import { Fragment } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Disclosure, Menu, Transition } from '@headlessui/react'
 import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { UserCircleIcon } from '@heroicons/react/24/solid'
+import { useSession } from 'next-auth/react'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard' },
@@ -24,6 +25,22 @@ function classNames(...classes: string[]) {
 
 export default function DashboardNav() {
   const pathname = usePathname()
+  const { data: session } = useSession()
+  const user = session?.user
+  const [profileImage, setProfileImage] = useState<string | null>(user?.image || null)
+
+  useEffect(() => {
+    if (!user?.image) {
+      fetch('/api/auth/profile')
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data?.image) setProfileImage(data.image)
+          else if (data?.logo) setProfileImage(data.logo)
+        })
+    } else {
+      setProfileImage(user.image)
+    }
+  }, [user?.image])
 
   return (
     <Disclosure as="nav" className="bg-white shadow">
@@ -41,7 +58,7 @@ export default function DashboardNav() {
                   {navigation.map((item) => (
                     <Link
                       key={item.name}
-                      href={item.href}
+                      href={item.href || '/'}
                       className={classNames(
                         pathname === item.href
                           ? 'border-primary-500 text-gray-900'
@@ -68,7 +85,15 @@ export default function DashboardNav() {
                   <div>
                     <Menu.Button className="flex rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2">
                       <span className="sr-only">Open user menu</span>
+                      {profileImage ? (
+                        <img
+                          src={profileImage}
+                          alt={user?.name || user?.email || 'Profile'}
+                          className="h-8 w-8 rounded-full object-cover border border-gray-200"
+                        />
+                      ) : (
                       <UserCircleIcon className="h-8 w-8 text-gray-400" aria-hidden="true" />
+                      )}
                     </Menu.Button>
                   </div>
                   <Transition
@@ -85,7 +110,7 @@ export default function DashboardNav() {
                         <Menu.Item key={item.name}>
                           {({ active }) => (
                             <Link
-                              href={item.href}
+                              href={item.href || '/'}
                               className={classNames(
                                 active ? 'bg-gray-100' : '',
                                 'block px-4 py-2 text-sm text-gray-700'
@@ -120,7 +145,7 @@ export default function DashboardNav() {
                 <Disclosure.Button
                   key={item.name}
                   as={Link}
-                  href={item.href}
+                  href={item.href || '/'}
                   className={classNames(
                     pathname === item.href
                       ? 'border-primary-500 bg-primary-50 text-primary-700'
@@ -138,7 +163,7 @@ export default function DashboardNav() {
                   <Disclosure.Button
                     key={item.name}
                     as={Link}
-                    href={item.href}
+                    href={item.href || '/'}
                     className="block px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800"
                   >
                     {item.name}

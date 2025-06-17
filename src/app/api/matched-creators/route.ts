@@ -96,95 +96,30 @@ function calculateMatchScore(sponsor: Sponsor, creator: Creator): number {
 }
 
 export async function GET(req: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const { searchParams } = new URL(req.url);
+  const search = searchParams.get('search') || '';
+
+  if (!search || search.length < 1) {
+    return NextResponse.json([]);
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    include: { 
-      listings: {
-        include: {
-          applications: true
-        }
-      }
-    }
+  const users = await prisma.user.findMany({
+    where: {
+      role: 'CREATOR',
+      OR: [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ],
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+    },
+    take: 10,
   });
 
-  if (!user) {
-    return NextResponse.json({ error: 'User not found' }, { status: 404 });
-  }
-
-  if (user.role !== 'SPONSOR') {
-    return NextResponse.json({ error: 'Only sponsors can view matched creators' }, { status: 403 });
-  }
-
-  // Find creators that match the sponsor's requirements
-  const creators = await prisma.user.findMany({
-    where: { role: 'CREATOR' },
-    include: { 
-      listings: {
-        include: {
-          applications: true
-        }
-      },
-      applications: true
-    }
-  });
-
-  const matches = creators.filter((creator: Creator) => {
-    // Match by audience profile
-    if (creator.audienceProfile && user.listings.some((l: Listing) => 
-      l.audienceProfile && 
-      typeof l.audienceProfile === 'string' && 
-      typeof creator.audienceProfile === 'string' && 
-      l.audienceProfile.includes(creator.audienceProfile)
-    )) {
-      return true;
-    }
-
-    // Match by category
-    if (creator.categories && user.listings.some((l: Listing) => 
-      l.category && 
-      typeof l.category === 'string' && 
-      creator.categories && 
-      creator.categories.includes(l.category)
-    )) {
-      return true;
-    }
-
-    // Match by follower count
-    if (creator.followers && user.listings.some((l: Listing) => l.requirements && l.requirements.some((r: string) => r.toLowerCase().includes('min') && creator.followers && creator.followers >= parseInt(r.replace(/\D/g, ''))))) {
-      return true;
-    }
-
-    return false;
-  });
-
-  // Get detailed creator data for each match
-  const creatorData: CreatorResult[] = matches.map((creator: Creator) => {
-    const contentCount = creator.listings.length;
-    const matchScore = calculateMatchScore(user as Sponsor, creator);
-
-    return {
-      id: creator.id,
-      name: creator.name || 'Anonymous Creator',
-      email: creator.email,
-      image: creator.image,
-      matchScore,
-      stats: {
-        followers: creator.followers || 0,
-        engagement: creator.engagement || 0,
-        contentCount
-      },
-      categories: creator.categories || []
-    };
-  });
-
-  // Sort by match score descending
-  creatorData.sort((a: { matchScore: number }, b: { matchScore: number }) => b.matchScore - a.matchScore);
-
-  return NextResponse.json(creatorData);
+  return NextResponse.json(users);
 }
 

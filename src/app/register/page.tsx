@@ -41,8 +41,8 @@ export default function RegisterPage() {
       }
 
       // Normally this would be an API call to create the user
-      // For now, we'll just redirect to login
-      router.push('/login')
+      // For now, we'll just redirect to setup
+      router.push('/register/setup')
     } catch (err) {
       setError('Registration failed. Please try again.')
     }

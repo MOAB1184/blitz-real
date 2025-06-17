@@ -13,6 +13,7 @@ import {
   CheckCircleIcon,
   ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
+import axios from 'axios';
 
 interface Creator {
   id: number;
@@ -53,131 +54,35 @@ export default function MatchedCreatorsPage() {
     platforms: [] as string[],
   });
   const [loading, setLoading] = useState(true);
+  const [followStatus, setFollowStatus] = useState<{ [key: string]: boolean }>({});
+  const isCreator = session?.user?.role === 'CREATOR';
+  const [fadeIn, setFadeIn] = useState(false);
 
-  // Mock data for creators
   useEffect(() => {
-    // In a real app, this would be an API call
-    const mockCreators: Creator[] = [
-      {
-        id: 1,
-        name: 'Alex Johnson',
-        niche: 'Tech & Gaming',
-        avatar: '/avatars/alex.jpg',
-        matchScore: 92,
-        rate: 500,
-        verified: true,
-        followers: 75000,
-        successfulPartnerships: 27,
-        audienceMatch: 95,
-        valueMatch: 89,
-        description: 'Tech reviewer and gaming streamer with a focus on PC hardware and indie games.',
-        platforms: ['YouTube', 'Twitch', 'Instagram'],
-        audienceSize: 75000,
-        audienceDemographics: '18-34, 70% male, tech enthusiasts',
-        engagementRate: '8.5%',
-        contentTypes: ['Reviews', 'Tutorials', 'Live streams'],
-        previousBrands: ['Razer', 'AMD', 'Indie Game Studios'],
-        location: 'Seattle, WA',
-        website: 'https://alexjtech.com',
-        email: 'alex@alexjtech.com'
-      },
-      {
-        id: 2,
-        name: 'Sarah Chen',
-        niche: 'Fitness & Wellness',
-        avatar: '/avatars/sarah.jpg',
-        matchScore: 87,
-        rate: 350,
-        verified: true,
-        followers: 45000,
-        successfulPartnerships: 15,
-        audienceMatch: 82,
-        valueMatch: 94,
-        description: 'Certified personal trainer sharing workout routines, nutrition tips, and wellness advice.',
-        platforms: ['Instagram', 'YouTube', 'TikTok'],
-        audienceSize: 45000,
-        audienceDemographics: '25-45, 80% female, fitness enthusiasts',
-        engagementRate: '6.2%',
-        contentTypes: ['Workout videos', 'Meal prep', 'Product reviews'],
-        previousBrands: ['Lululemon', 'Protein Bar Co.', 'Fitness App'],
-        location: 'Portland, OR',
-        website: 'https://sarahfitlife.com',
-        email: 'sarah@sarahfitlife.com'
-      },
-      {
-        id: 3,
-        name: 'Marcus Williams',
-        niche: 'Food & Cooking',
-        avatar: '/avatars/marcus.jpg',
-        matchScore: 78,
-        rate: 400,
-        verified: false,
-        followers: 32000,
-        successfulPartnerships: 8,
-        audienceMatch: 75,
-        valueMatch: 81,
-        description: 'Home chef creating easy-to-follow recipes and food reviews with a focus on local ingredients.',
-        platforms: ['Instagram', 'TikTok', 'Blog'],
-        audienceSize: 32000,
-        audienceDemographics: '25-55, mixed gender, food enthusiasts',
-        engagementRate: '5.8%',
-        contentTypes: ['Recipe videos', 'Restaurant reviews', 'Cooking tips'],
-        previousBrands: ['Local Restaurants', 'Cookware Brand', 'Meal Kit Service'],
-        location: 'Chicago, IL',
-        email: 'marcus@tastewithmarc.com'
-      },
-      {
-        id: 4,
-        name: 'Jasmine Lee',
-        niche: 'Travel & Lifestyle',
-        avatar: '/avatars/jasmine.jpg',
-        matchScore: 85,
-        rate: 600,
-        verified: true,
-        followers: 120000,
-        successfulPartnerships: 32,
-        audienceMatch: 88,
-        valueMatch: 82,
-        description: 'Travel blogger and photographer documenting adventures around the world with a focus on sustainable tourism.',
-        platforms: ['Instagram', 'YouTube', 'Blog'],
-        audienceSize: 120000,
-        audienceDemographics: '25-40, 65% female, travel enthusiasts',
-        engagementRate: '4.2%',
-        contentTypes: ['Travel guides', 'Photography', 'Hotel reviews'],
-        previousBrands: ['Luggage Company', 'Hotel Chain', 'Travel App'],
-        location: 'Los Angeles, CA',
-        website: 'https://wanderwithjas.com',
-        email: 'jasmine@wanderwithjas.com'
-      },
-      {
-        id: 5,
-        name: 'David Kim',
-        niche: 'Art & Design',
-        avatar: '/avatars/david.jpg',
-        matchScore: 90,
-        rate: 450,
-        verified: true,
-        followers: 65000,
-        successfulPartnerships: 19,
-        audienceMatch: 92,
-        valueMatch: 88,
-        description: 'Digital artist and designer creating tutorials, speed-paints, and design critiques.',
-        platforms: ['Instagram', 'YouTube', 'Behance'],
-        audienceSize: 65000,
-        audienceDemographics: '18-35, mixed gender, artists and designers',
-        engagementRate: '7.5%',
-        contentTypes: ['Tutorials', 'Speed paints', 'Product reviews'],
-        previousBrands: ['Adobe', 'Wacom', 'Art Supply Stores'],
-        location: 'New York, NY',
-        website: 'https://davidkimdesign.com',
-        email: 'david@davidkimdesign.com'
-      }
-    ];
-
-    setCreators(mockCreators);
-    setFilteredCreators(mockCreators);
-    setLoading(false);
+    setFadeIn(true);
   }, []);
+
+  // Fetch real creators from backend
+  useEffect(() => {
+    setLoading(true);
+    fetch('/api/matched-creators')
+      .then(res => res.json())
+      .then(data => {
+        setCreators(data);
+        setFilteredCreators(data);
+        setLoading(false);
+        // Fetch follow status for each creator if user is creator
+        if (isCreator && session?.user?.id) {
+          data.forEach((creator: any) => {
+            if (creator.id !== session.user.id) {
+              fetch(`/api/follow?targetId=${creator.id}`)
+                .then(res => res.json())
+                .then(follow => setFollowStatus(prev => ({ ...prev, [creator.id]: !!follow.following })));
+            }
+          });
+        }
+      });
+  }, [isCreator, session?.user?.id]);
 
   // Filter creators based on search term and filters
   useEffect(() => {
@@ -255,6 +160,27 @@ export default function MatchedCreatorsPage() {
     window.location.href = `/dashboard/messages?recipient=${creator.id}`;
   };
 
+  const handleViewProfile = (creator: Creator) => {
+    // In a real app, this would navigate to the creator's profile page
+    console.log(`View profile: ${creator.name}`);
+    window.location.href = `/dashboard/creator/${creator.id}`;
+  };
+
+  const handleViewListings = (creator: Creator) => {
+    // In a real app, this would navigate to the creator's listings page
+    console.log(`View listings: ${creator.name}`);
+    window.location.href = `/dashboard/creator/${creator.id}/listings`;
+  };
+
+  const handleFollow = async (creatorId: string) => {
+    await axios.post('/api/follow', { targetId: creatorId });
+    setFollowStatus(prev => ({ ...prev, [creatorId]: true }));
+  };
+  const handleUnfollow = async (creatorId: string) => {
+    await axios.delete('/api/follow', { data: { targetId: creatorId } });
+    setFollowStatus(prev => ({ ...prev, [creatorId]: false }));
+  };
+
   const niches = Array.from(new Set(creators.map(creator => creator.niche)));
   const platforms = Array.from(
     new Set(creators.flatMap(creator => creator.platforms))
@@ -269,6 +195,7 @@ export default function MatchedCreatorsPage() {
   }
 
   return (
+    <div className={`transition-opacity duration-700 ${fadeIn ? 'opacity-100' : 'opacity-0'}`}>
     <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
         <div>
@@ -576,7 +503,37 @@ export default function MatchedCreatorsPage() {
                   </div>
                 </div>
 
-                <div className="mt-6 flex justify-end">
+                  <div className="mt-6 flex justify-end space-x-4">
+                    {/* Only show follow button if user is a creator and not viewing themselves */}
+                    {isCreator && String(session?.user?.id) !== String(creator.id) && (
+                      followStatus[String(creator.id)] ? (
+                        <button
+                          onClick={() => handleUnfollow(String(creator.id))}
+                          className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                          Unfollow
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleFollow(String(creator.id))}
+                          className="inline-flex items-center px-4 py-2 border border-blue-300 text-sm font-medium rounded-md shadow-sm text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                          Follow
+                        </button>
+                      )
+                    )}
+                    <button
+                      onClick={() => handleViewProfile(creator)}
+                      className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      View Profile
+                    </button>
+                    <button
+                      onClick={() => handleViewListings(creator)}
+                      className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      View Listings
+                    </button>
                   <button
                     onClick={() => handleContactCreator(creator)}
                     className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -589,6 +546,7 @@ export default function MatchedCreatorsPage() {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }

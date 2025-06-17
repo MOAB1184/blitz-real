@@ -106,15 +106,23 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
+        token.email = user.email
         token.role = user.role
       }
-      return token
+      // Only return minimal data, ensure all are strings
+      return {
+        id: String(token.id || ''),
+        email: String(token.email || ''),
+        role: String(token.role || '')
+      }
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.id
-        session.user.role = token.role
+        session.user.id = String(token.id || '')
+        session.user.email = String(token.email || '')
+        session.user.role = String(token.role || '')
       }
+      // Only return minimal data
       return session
     }
   },

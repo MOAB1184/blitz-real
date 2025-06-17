@@ -47,7 +47,6 @@ const sponsorNavigation: NavigationItem[] = [
   { name: 'My Listings', href: '/dashboard/my-listings', icon: BriefcaseIcon },
   { name: 'Create New Listing', href: '/dashboard/my-listings/create', icon: PlusCircleIcon },
   { name: 'Applications', href: '/dashboard/applications', icon: DocumentTextIcon },
-  { name: 'Matched Creators', href: '/dashboard/matched-creators', icon: UserGroupIcon, tooltip: 'View creators that match your brand values and target audience' },
   { name: 'Messages', href: '/dashboard/messages', icon: ChatBubbleLeftRightIcon },
   { name: 'Payments', href: '/dashboard/payments', icon: CreditCardIcon },
   { name: 'Profile', href: '/dashboard/profile', icon: UserCircleIcon },
@@ -59,9 +58,6 @@ const creatorNavigation: NavigationItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Browse Opportunities', href: '/dashboard/browse', icon: MagnifyingGlassIcon },
   { name: 'My Applications', href: '/dashboard/applications', icon: DocumentTextIcon },
-  { name: 'Sponsor Matches', href: '/dashboard/sponsor-matches', icon: BuildingOfficeIcon, tooltip: 'View sponsors that match your profile and content' },
-  { name: 'Portfolio', href: '#', icon: PhotoIcon, disabled: true, comingSoon: true },
-  { name: 'Performance Analytics', href: '#', icon: ChartBarIcon, disabled: true, comingSoon: true },
   { name: 'Messages', href: '/dashboard/messages', icon: ChatBubbleLeftRightIcon },
   { name: 'Payments', href: '/dashboard/payments', icon: CreditCardIcon },
   { name: 'Profile', href: '/dashboard/profile', icon: UserCircleIcon },
@@ -120,29 +116,54 @@ export default function Sidebar() {
       <nav className="flex-1 space-y-1 px-2 py-4">
         {navigation.map((item) => (
           <div key={item.name} className="relative">
-            <Link
-              href={item.href}
-              className={classNames(
-                item.disabled ? 'cursor-not-allowed opacity-50' : 'hover:bg-gray-50',
-                'group flex items-center px-2 py-2 text-sm font-medium rounded-md'
-              )}
-              onClick={(e) => item.disabled && e.preventDefault()}
-            >
-              <item.icon
+            {item.disabled ? (
+              <span
                 className={classNames(
-                  item.disabled ? 'text-gray-400' : 'text-gray-500 group-hover:text-gray-500',
-                  'mr-3 flex-shrink-0 h-6 w-6'
+                  'cursor-not-allowed opacity-50 group flex items-center px-2 py-2 text-sm font-medium rounded-md',
+                  'bg-gray-100'
                 )}
-                aria-hidden="true"
-              />
-              <div className="flex flex-col">
-                <span className={item.disabled ? 'text-gray-400' : 'text-gray-900'}>{item.name}</span>
-                {item.comingSoon && (
-                  <span className="text-xs text-gray-400">Coming Soon</span>
+              >
+                <item.icon
+                  className={classNames(
+                    'text-gray-400 mr-3 flex-shrink-0 h-6 w-6'
+                  )}
+                  aria-hidden="true"
+                />
+                {!collapsed && (
+                  <div className="flex flex-col">
+                    <span className="text-gray-400">{item.name}</span>
+                    {item.comingSoon && (
+                      <span className="text-xs text-gray-400">Coming Soon</span>
+                    )}
+                  </div>
                 )}
-              </div>
-            </Link>
-            {item.tooltip && (
+              </span>
+            ) : (
+              <Link
+                href={item.href || '/'}
+                className={classNames(
+                  'hover:bg-gray-50 group flex items-center px-2 py-2 text-sm font-medium rounded-md',
+                  item.disabled ? 'cursor-not-allowed opacity-50' : ''
+                )}
+              >
+                <item.icon
+                  className={classNames(
+                    item.disabled ? 'text-gray-400' : 'text-gray-500 group-hover:text-gray-500',
+                    'mr-3 flex-shrink-0 h-6 w-6'
+                  )}
+                  aria-hidden="true"
+                />
+                {!collapsed && (
+                  <div className="flex flex-col">
+                    <span className={item.disabled ? 'text-gray-400' : 'text-gray-900'}>{item.name}</span>
+                    {item.comingSoon && (
+                      <span className="text-xs text-gray-400">Coming Soon</span>
+                    )}
+                  </div>
+                )}
+              </Link>
+            )}
+            {item.tooltip && !collapsed && (
               <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 hidden group-hover:block">
                 <div className="bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
                   {item.tooltip}

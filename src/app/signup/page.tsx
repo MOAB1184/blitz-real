@@ -100,7 +100,7 @@ export default function SignupPage() {
                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
           >
                 <option value="creator">Creator</option>
-                <option value="business">Business</option>
+                <option value="sponsor">Sponsor</option>
                 <option value="organization">Organization</option>
               </select>
             </div>

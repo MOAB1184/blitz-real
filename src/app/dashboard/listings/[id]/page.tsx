@@ -33,30 +33,43 @@ export default function ListingPage({ params }: { params: { id: string } }) {
   const [error, setError] = useState<string | null>(null)
   const [isApplying, setIsApplying] = useState(false)
   const [hasApplied, setHasApplied] = useState(false)
+  const [fadeIn, setFadeIn] = useState(false)
 
-  const fetchListing = async () => {
-    try {
+  useEffect(() => { setFadeIn(true); }, [])
+
+  if (session?.user?.role === 'SPONSOR') {
+    return (
+      <div className="min-h-full flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600">Sponsors are not allowed to view listing details. This page is for creators only.</p>
+        </div>
+      </div>
+    );
+  }
+
+    const fetchListing = async () => {
+      try {
       setLoading(true)
       setError(null)
-      const res = await fetch(`/api/listings/${params.id}`)
-      if (!res.ok) throw new Error('Failed to fetch listing')
-      const data = await res.json()
-      setListing(data)
-      
-      // Check if user has already applied
-      if (session?.user?.id) {
-        const applicationRes = await fetch(`/api/applications/check?listingId=${params.id}`)
-        if (applicationRes.ok) {
-          const { hasApplied } = await applicationRes.json()
-          setHasApplied(hasApplied)
+        const res = await fetch(`/api/listings/${params.id}`)
+        if (!res.ok) throw new Error('Failed to fetch listing')
+        const data = await res.json()
+        setListing(data)
+        
+        // Check if user has already applied
+        if (session?.user?.id) {
+          const applicationRes = await fetch(`/api/applications/check?listingId=${params.id}`)
+          if (applicationRes.ok) {
+            const { hasApplied } = await applicationRes.json()
+            setHasApplied(hasApplied)
+          }
         }
+      } catch (e: any) {
+        setError(e.message)
+      } finally {
+        setLoading(false)
       }
-    } catch (e: any) {
-      setError(e.message)
-    } finally {
-      setLoading(false)
     }
-  }
 
   useEffect(() => {
     if (params.id) fetchListing()
@@ -114,6 +127,7 @@ export default function ListingPage({ params }: { params: { id: string } }) {
   }
 
   return (
+    <div className={`transition-opacity duration-700 ${fadeIn ? 'opacity-100' : 'opacity-0'}`}>
     <div className="min-h-full" style={{ backgroundColor: 'var(--background)' }}>
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="lg:grid lg:grid-cols-12 lg:gap-8">
@@ -193,7 +207,7 @@ export default function ListingPage({ params }: { params: { id: string } }) {
                   </div>
                   <div className="flex items-center text-sm text-gray-500">
                     <UserGroupIcon className="h-5 w-5 text-gray-400 mr-2" />
-                    {listing.applications.length} applications
+                      {Array.isArray(listing.applications) ? listing.applications.length : 0} applications
                   </div>
                   <div className="flex items-center text-sm text-gray-500">
                     <CurrencyDollarIcon className="h-5 w-5 text-gray-400 mr-2" />
@@ -222,6 +236,7 @@ export default function ListingPage({ params }: { params: { id: string } }) {
                     You have already applied to this listing. Check your applications page for updates.
                   </p>
                 )}
+                </div>
               </div>
             </div>
           </div>

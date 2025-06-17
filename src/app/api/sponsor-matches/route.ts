@@ -116,7 +116,7 @@ export async function GET(req: Request) {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    include: {
+    include: { 
       listings: {
         include: {
           applications: true,
@@ -139,7 +139,7 @@ export async function GET(req: Request) {
   // Find sponsors that match the creator's profile
   const sponsors = (await prisma.user.findMany({
     where: { role: 'SPONSOR' },
-    include: {
+    include: { 
       listings: {
         include: {
           applications: true,

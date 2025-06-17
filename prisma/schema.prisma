@@ -41,6 +41,8 @@ model User {
   receivedPayments Payment[] @relation("ReceivedPayments")
   viewedProfiles   ProfileView[] @relation("ViewedProfiles")
   profileViews     ProfileView[] @relation("ProfileViews")
+  following   Follow[] @relation("Following")
+  followers   Follow[] @relation("Followers")
 }
 
 enum UserRole {
@@ -209,5 +211,17 @@ model UnverifiedUser {
   updatedAt             DateTime  @updatedAt
 
   @@map("unverified_users")
+}
+
+model Follow {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  followerId String   @db.ObjectId
+  followingId String  @db.ObjectId
+  createdAt  DateTime @default(now())
+
+  follower   User     @relation("Following", fields: [followerId], references: [id])
+  following  User     @relation("Followers", fields: [followingId], references: [id])
+
+  @@unique([followerId, followingId])
 }
 

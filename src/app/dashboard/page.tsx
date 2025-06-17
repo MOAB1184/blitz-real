@@ -3,11 +3,50 @@
 import { useSession } from 'next-auth/react';
 import SponsorDashboard from '@/components/dashboard/SponsorDashboard';
 import CreatorDashboard from '@/components/dashboard/CreatorDashboard';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
+  const [fadeIn, setFadeIn] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const router = useRouter();
 
-  if (status === 'loading') {
+  useEffect(() => { setFadeIn(true); }, []);
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      setProfileLoading(true);
+      fetch('/api/auth/profile')
+        .then(res => res.json())
+        .then(data => {
+          setProfile(data);
+          setProfileLoading(false);
+        })
+        .catch(() => setProfileLoading(false));
+    }
+  }, [session?.user?.id]);
+
+  useEffect(() => {
+    if (!profileLoading && profile && session?.user?.role) {
+      console.log('Profile data:', profile);
+      if (session.user.role === 'SPONSOR') {
+        const hasBusinessName = !!profile.name;
+        const hasIndustry = !!profile.socialLinks?.industry;
+        console.log('Sponsor check:', { hasBusinessName, hasIndustry });
+        if (!hasBusinessName || !hasIndustry) {
+          router.replace('/dashboard/onboarding/profile');
+        }
+      } else {
+        if (!profile.bio || !profile.niche) {
+          router.replace('/dashboard/onboarding/creator');
+        }
+      }
+    }
+  }, [profileLoading, profile, session?.user?.role, router]);
+
+  if (status === 'loading' || profileLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -34,5 +73,11 @@ export default function DashboardPage() {
   } else {
     return <CreatorDashboard />;
   }
+
+  return (
+    <div className={`transition-opacity duration-700 ${fadeIn ? 'opacity-100' : 'opacity-0'}`}>
+      {/* ...rest of the dashboard landing page content... */}
+    </div>
+  );
 }
 

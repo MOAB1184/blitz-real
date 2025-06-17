@@ -66,34 +66,33 @@ export default function SponsorDashboard() {
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [recommendedListings, setRecommendedListings] = useState<DashboardListing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fadeIn, setFadeIn] = useState(false);
 
   useEffect(() => {
     async function fetchDashboardData() {
       setLoading(true);
       try {
-        const [statsRes, activityRes, listingsRes] = await Promise.all([
-          fetch('/api/dashboard/stats?sponsor=1'),
-          fetch('/api/dashboard/recent-activity?sponsor=1'),
-          fetch('/api/dashboard/recommended-listings'),
-        ]);
+        const statsRes = await fetch('/api/dashboard/stats?sponsor=1');
+        const listingsRes = await fetch('/api/dashboard/recommended-listings');
         if (statsRes.ok) {
           const statsData = await statsRes.json();
           setDashboardStats([
-            { name: 'Active Listings', value: statsData.activeListings, icon: PlusCircleIcon, color: 'bg-blue-100 text-blue-800' },
-            { name: 'Pending Applications', value: statsData.pendingApplications, icon: UserGroupIcon, color: 'bg-yellow-100 text-yellow-800' },
-            { name: 'Messages', value: statsData.messages, icon: ChatBubbleLeftRightIcon, color: 'bg-green-100 text-green-800' },
-            { name: 'Budget Allocated', value: `$${statsData.budgetAllocated}`, icon: CurrencyDollarIcon, color: 'bg-purple-100 text-purple-800' },
+            { name: 'Active Listings', value: statsData.activeListings ?? 0, icon: PlusCircleIcon, color: 'bg-blue-100 text-blue-800' },
+            { name: 'Pending Applications', value: statsData.pendingApplications ?? 0, icon: UserGroupIcon, color: 'bg-yellow-100 text-yellow-800' },
+            { name: 'Unread Messages', value: statsData.messages ?? 0, icon: ChatBubbleLeftRightIcon, color: 'bg-green-100 text-green-800' },
+            { name: 'Budget Allocated', value: `$${statsData.budgetAllocated ?? 0}`, icon: CurrencyDollarIcon, color: 'bg-purple-100 text-purple-800' },
           ]);
         }
-        if (activityRes.ok) {
-          setRecentActivity(await activityRes.json());
-        }
-        if (listingsRes.ok) {
+        if (listingsRes && listingsRes.ok) {
           setRecommendedListings(await listingsRes.json());
         }
       } catch (e) {
-        setDashboardStats([]);
-        setRecentActivity([]);
+        setDashboardStats([
+          { name: 'Active Listings', value: 0, icon: PlusCircleIcon, color: 'bg-blue-100 text-blue-800' },
+          { name: 'Pending Applications', value: 0, icon: UserGroupIcon, color: 'bg-yellow-100 text-yellow-800' },
+          { name: 'Unread Messages', value: 0, icon: ChatBubbleLeftRightIcon, color: 'bg-green-100 text-green-800' },
+          { name: 'Budget Allocated', value: '$0', icon: CurrencyDollarIcon, color: 'bg-purple-100 text-purple-800' },
+        ]);
         setRecommendedListings([]);
       } finally {
         setLoading(false);
@@ -101,6 +100,8 @@ export default function SponsorDashboard() {
     }
     fetchDashboardData();
   }, []);
+
+  useEffect(() => { setFadeIn(true); }, []);
 
   const filteredListings = selectedFilter === 'All'
     ? recommendedListings
@@ -127,6 +128,7 @@ export default function SponsorDashboard() {
   };
 
   return (
+    <div className={`transition-opacity duration-700 ${fadeIn ? 'opacity-100' : 'opacity-0'}`}>
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8" style={{ backgroundColor: 'var(--background-light)' }}>
@@ -150,35 +152,8 @@ export default function SponsorDashboard() {
             ))}
           </div>
           
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
-            {/* Recent Activity */}
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-semibold">Recent Activity</h2>
-                  <Link href="/dashboard/notifications" className="text-sm text-blue-600 hover:text-blue-800">
-                    View All
-                  </Link>
-                </div>
-                <div className="space-y-4">
-                  {recentActivity.map((activity) => (
-                    <div key={activity.id} className="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
-                      <h3 className="font-medium">{activity.title}</h3>
-                      <p className="text-sm text-gray-600 mb-1">{activity.description}</p>
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs text-gray-500">{activity.time}</span>
-                        <Link href={activity.link} className="text-xs text-blue-600 hover:text-blue-800 flex items-center">
-                          View <ArrowRightIcon className="h-3 w-3 ml-1" />
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            
-            {/* Quick Actions */}
-            <div className="lg:col-span-2">
+            {/* Quick Actions Full Width */}
+            <div className="mb-10">
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <h2 className="text-xl font-semibold mb-6">Quick Actions</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -205,7 +180,6 @@ export default function SponsorDashboard() {
                     <span className="font-medium">Messages</span>
                     <span className="text-sm text-gray-500">Check your conversations</span>
                   </Link>
-                </div>
               </div>
             </div>
           </div>
@@ -221,95 +195,7 @@ export default function SponsorDashboard() {
           </div>
 
           {/* Recommended Listings Section */}
-          <section className="mt-10">
-            <h2 className="text-2xl font-bold tracking-tight text-gray-900 mb-6">Recommended Opportunities</h2>
-
-            {/* Filter Buttons */}
-            <div className="flex flex-wrap gap-4 mb-8">
-              {filters.map(filter => (
-                <button
-                  key={filter}
-                  onClick={() => setSelectedFilter(filter)}
-                  className={getFilterButtonClassNames(filter)}
-                >
-                  {filter}
-                </button>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-              {filteredListings.map(listing => (
-                <div key={listing.id} className="card border p-8 flex flex-col gap-4" style={{ borderColor: 'var(--accent)', backgroundColor: 'var(--background)' }}>
-                  <div className="flex items-center gap-4">
-                    <span className="font-semibold text-xl text-gray-900">{listing.name}</span>
-                    {listing.verified && <ShieldCheckIcon className="h-5 w-5 text-green-500 ml-2" title="Verified" />}
-                    <span className="ml-auto text-base px-4 py-1 rounded-full text-gray-900" style={{ backgroundColor: 'var(--secondary)' }}>{listing.type}</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-sm mb-2">
-                    {listing.location && (
-                      <div className="flex items-center gap-1 mr-4">
-                        <MapPinIcon className="h-4 w-4 text-gray-500" />
-                        <span>{listing.location}</span>
-                      </div>
-                    )}
-                    {listing.date && (
-                      <div className="flex items-center gap-1">
-                        <CalendarDaysIcon className="h-4 w-4 text-gray-500" />
-                        <span>{new Date(listing.date).toLocaleDateString()}</span>
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-gray-700 line-clamp-2">{listing.description}</p>
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="font-medium">Audience:</span>
-                    <span className="text-gray-700">{listing.audience}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="font-medium">Budget:</span>
-                    <span className="text-gray-700">${listing.budget}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="font-medium">Rating:</span>
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <StarIcon
-                          key={i}
-                          className={`h-4 w-4 ${
-                            i < Math.floor(listing.rating || 0)
-                              ? 'text-yellow-400 fill-current'
-                              : i < (listing.rating || 0)
-                              ? 'text-yellow-400 fill-current'
-                              : 'text-gray-300'
-                          }`}
-                        />
-                      ))}
-                      <span className="ml-1 text-gray-600">{listing.rating}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="font-medium">Alignment:</span>
-                    <span className={`px-2 py-0.5 rounded-full text-xs ${
-                      listing.alignmentScore === 'high'
-                        ? 'bg-green-100 text-green-800'
-                        : listing.alignmentScore === 'medium'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {listing.alignmentScore === 'high' ? 'High' : listing.alignmentScore === 'medium' ? 'Medium' : 'Low'}
-                    </span>
-                  </div>
-                  <div className="mt-4">
-                    <button
-                      onClick={() => openDetailView(listing)}
-                      className="w-full py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-                    >
-                      View Details
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
+            {/* Removed the entire <section className="mt-10"> with heading 'Recommended Opportunities' */}
         </div>
       </main>
 
@@ -320,6 +206,7 @@ export default function SponsorDashboard() {
           onClose={closeDetailView}
         />
       )}
+      </div>
     </div>
   );
 }

@@ -12,6 +12,8 @@ interface ProfileForm {
   industry: string
   about: string
   location: string
+  preferredPlatforms: string[]
+  budgetRange: { min: number; max: number }
 }
 
 const industries = [
@@ -27,6 +29,17 @@ const industries = [
   'Other'
 ]
 
+const platforms = [
+  'YouTube',
+  'Instagram',
+  'TikTok',
+  'Twitter',
+  'Facebook',
+  'LinkedIn',
+  'Twitch',
+  'Other'
+]
+
 export default function SponsorProfileSetupPage() {
   const router = useRouter()
   const [formData, setFormData] = useState<ProfileForm>({
@@ -36,7 +49,9 @@ export default function SponsorProfileSetupPage() {
     website: '',
     industry: '',
     about: '',
-    location: ''
+    location: '',
+    preferredPlatforms: [],
+    budgetRange: { min: 0, max: 0 }
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
@@ -58,12 +73,43 @@ export default function SponsorProfileSetupPage() {
     }
   }
 
+  const handlePlatformToggle = (platform: string) => {
+    setFormData(prev => ({
+      ...prev,
+      preferredPlatforms: prev.preferredPlatforms.includes(platform)
+        ? prev.preferredPlatforms.filter(p => p !== platform)
+        : [...prev.preferredPlatforms, platform]
+    }))
+  }
+
+  const handleBudgetChange = (field: 'min' | 'max', value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      budgetRange: { ...prev.budgetRange, [field]: Number(value) }
+    }))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
     
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    // Send profile data to backend
+    await fetch('/api/auth/profile', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: formData.businessName,
+        website: formData.website,
+        socialLinks: {
+          industry: formData.industry,
+          preferredPlatforms: formData.preferredPlatforms,
+          budgetRange: formData.budgetRange
+        }
+      }),
+    })
     
     setIsSubmitting(false)
     setShowSuccess(true)
@@ -151,7 +197,7 @@ export default function SponsorProfileSetupPage() {
           {/* Website */}
           <div>
             <label htmlFor="website" className="block text-sm font-medium text-gray-700">
-              Website or Social Handles
+              Website or Social Handles (Optional)
             </label>
             <input
               type="text"
@@ -218,6 +264,45 @@ export default function SponsorProfileSetupPage() {
               placeholder="e.g., New York City, NY or West Coast"
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-warm-dark focus:ring-warm-dark sm:text-sm"
             />
+          </div>
+
+          {/* Preferred Platforms */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Preferred Platforms</label>
+            <div className="mt-2 space-y-2">
+              {platforms.map(platform => (
+                <label key={platform} className="inline-flex items-center mr-4">
+                  <input
+                    type="checkbox"
+                    checked={formData.preferredPlatforms.includes(platform)}
+                    onChange={() => handlePlatformToggle(platform)}
+                    className="rounded border-gray-300 text-warm-dark focus:ring-warm-dark"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">{platform}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Budget Range */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Budget Range</label>
+            <div className="mt-1 flex space-x-4">
+              <input
+                type="number"
+                placeholder="Min"
+                value={formData.budgetRange.min}
+                onChange={(e) => handleBudgetChange('min', e.target.value)}
+                className="block w-1/2 rounded-md border-gray-300 shadow-sm focus:border-warm-dark focus:ring-warm-dark sm:text-sm"
+              />
+              <input
+                type="number"
+                placeholder="Max"
+                value={formData.budgetRange.max}
+                onChange={(e) => handleBudgetChange('max', e.target.value)}
+                className="block w-1/2 rounded-md border-gray-300 shadow-sm focus:border-warm-dark focus:ring-warm-dark sm:text-sm"
+              />
+            </div>
           </div>
 
           <div className="flex justify-end space-x-4">

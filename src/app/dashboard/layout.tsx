@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { Disclosure, Menu, Transition } from '@headlessui/react'
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 import { usePathname } from 'next/navigation'
@@ -30,6 +30,20 @@ export default function DashboardLayout({
   const pathname = usePathname()
   const { data: session } = useSession()
   const user = session?.user
+  const [profileImage, setProfileImage] = useState<string | null>(user?.image || null)
+
+  useEffect(() => {
+    if (!user?.image) {
+      fetch('/api/auth/profile')
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data?.image) setProfileImage(data.image)
+          else if (data?.logo) setProfileImage(data.logo)
+        })
+    } else {
+      setProfileImage(user.image)
+    }
+  }, [user?.image])
 
   return (
     <div className="min-h-full" style={{ backgroundColor: 'var(--background)' }}>
@@ -64,8 +78,8 @@ export default function DashboardLayout({
                     <div>
                       <Menu.Button className="flex items-center gap-2 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
                         <span className="sr-only">Open user menu</span>
-                        {user?.image ? (
-                          <img src={user.image} alt={user.name || 'Profile'} className="h-8 w-8 rounded-full object-cover border-2 border-gray-300" />
+                        {profileImage && profileImage.length > 0 ? (
+                          <img src={profileImage} alt={user?.name || 'Profile'} className="h-8 w-8 rounded-full object-cover border-2 border-gray-300" />
                         ) : (
                           <DefaultAvatar name={user?.name} />
                         )}
@@ -86,7 +100,7 @@ export default function DashboardLayout({
                         <Menu.Item>
                           {({ active }) => (
                             <Link
-                              href="/dashboard/profile"
+                              href={"/dashboard/profile" || '/'}
                               className={classNames(
                                 active ? 'bg-gray-200' : '',
                                 'block px-4 py-2 text-sm text-gray-700 hover:text-gray-900'
@@ -99,7 +113,7 @@ export default function DashboardLayout({
                         <Menu.Item>
                           {({ active }) => (
                             <Link
-                              href="/dashboard/settings"
+                              href={"/dashboard/settings" || '/'}
                               className={classNames(
                                 active ? 'bg-gray-200' : '',
                                 'block px-4 py-2 text-sm text-gray-700 hover:text-gray-900'
@@ -139,8 +153,8 @@ export default function DashboardLayout({
                 <div className="flex items-center px-5">
                   {/* User avatar mobile */}
                   <div className="flex-shrink-0">
-                    {user?.image ? (
-                      <img src={user.image} alt={user.name || 'Profile'} className="h-10 w-10 rounded-full object-cover border-2 border-gray-300" />
+                    {profileImage && profileImage.length > 0 ? (
+                      <img src={profileImage} alt={user?.name || 'Profile'} className="h-10 w-10 rounded-full object-cover border-2 border-gray-300" />
                     ) : (
                       <DefaultAvatar name={user?.name} />
                     )}
@@ -157,13 +171,13 @@ export default function DashboardLayout({
                 <div className="mt-3 space-y-1 px-2">
                   {/* Mobile Profile and Sign out links */}
                    <Link
-                      href="/dashboard/profile"
+                      href={"/dashboard/profile" || '/'}
                       className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100 hover:text-gray-800"
                    >
                      My Profile
                    </Link>
                     <Link
-                      href="/dashboard/settings"
+                      href={"/dashboard/settings" || '/'}
                       className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100 hover:text-gray-800"
                     >
                       Settings

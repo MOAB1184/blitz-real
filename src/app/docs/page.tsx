@@ -328,8 +328,8 @@ Before receiving payments, you need to set up your payment information:
 - **Standard Release**: Payments are typically released within 7 days of deliverable approval
 - **Milestone Payments**: Released upon completion of each milestone
 - **Escrow Protection**: Funds are held in escrow until deliverables are approved
-- **Platform Fee**: Blitz charges a 2% platform fee on all transactions
-- **Payment Processing Fee**: Standard 3% payment processing fee applies
+- **Platform Fee**: Blitz is completely free to use. There are no platform or transaction fees.
+- **Payment Processing Fee**: There are no payment processing fees.
 
 ## Invoicing
 
@@ -430,7 +430,7 @@ From the [My Listings](/dashboard/my-listings) section, you can:
 
 - **Public Listings**: Visible to all creators and included in search results
 - **Private Listings**: Only visible to creators you specifically invite
-- **Featured Listings**: Premium placement in search results (additional fee)
+- **Featured Listings**: Premium placement in search results (currently free)
 
 [Create a New Listing](/dashboard/my-listings/create)
         `,
@@ -604,10 +604,7 @@ Blitz provides a secure, transparent payment system for all transactions between
 
 ## Fee Structure
 
-Blitz charges the following fees:
-- **Platform Fee**: 2% on all transactions
-- **Payment Processing Fee**: 3% standard payment processing fee
-- **Currency Conversion**: Variable rate if applicable
+Blitz is completely free to use. There are no platform or transaction fees.
 
 ## Milestone Payments
 
@@ -696,12 +693,7 @@ Blitz provides tools to help manage your sponsorship budget:
 
 ## Subscription Options
 
-Blitz offers several subscription tiers for sponsors:
-- **Basic**: Free tier with standard features
-- **Business**: Enhanced features, reduced fees, priority support
-- **Enterprise**: Custom solutions for large brands, dedicated account manager
-
-[View Subscription Options](/dashboard/settings/subscription)
+Blitz is completely free for all users.
 
 ## Invoicing and Reporting
 
@@ -766,11 +758,7 @@ Blitz provides tools to help manage your sponsorship income:
 
 ## Fee Structure
 
-Be aware of the following fees:
-- **Platform Fee**: 2% on all transactions
-- **Payment Processing Fee**: 3% standard payment processing fee
-- **Currency Conversion**: Variable rate if applicable
-- **Expedited Withdrawal**: Additional fee for same-day processing
+Blitz is completely free to use. There are no fees.
 
 ## Tax Considerations
 

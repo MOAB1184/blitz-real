@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ConversationList from '@/components/messages/ConversationList';
 import MessageThread from '@/components/messages/MessageThread';
 import { UserPlusIcon } from '@heroicons/react/24/outline';
@@ -13,6 +13,9 @@ export default function MessagesPage() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<any[]>([]);
   const { data: session } = useSession();
+  const [fadeIn, setFadeIn] = useState(false);
+
+  useEffect(() => { setFadeIn(true); }, []);
 
   const handleSelectConversation = (id: string) => {
     setSelectedConversation(id);
@@ -21,27 +24,22 @@ export default function MessagesPage() {
   const handleSearchUsers = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const term = e.target.value;
     setSearchTerm(term);
-    
     if (term.trim().length < 2) {
       setSearchResults([]);
       return;
     }
-    
     try {
-      // This would be replaced with an actual API call to search users
-      // For now, we'll simulate some results
-      const mockResults = [
-        { id: 'user1', name: 'John Doe', email: 'john@example.com', image: null },
-        { id: 'user2', name: 'Jane Smith', email: 'jane@example.com', image: null },
-        { id: 'user3', name: 'Bob Johnson', email: 'bob@example.com', image: null },
-      ].filter(user => 
-        user.name.toLowerCase().includes(term.toLowerCase()) || 
-        user.email.toLowerCase().includes(term.toLowerCase())
-      );
-      
-      setSearchResults(mockResults);
+      // Use real API call and filter by role
+      const role = session?.user?.role === 'SPONSOR' ? 'CREATOR' : 'CREATOR';
+      const res = await fetch(`/api/users/search?term=${encodeURIComponent(term)}&role=${role}`);
+      if (res.ok) {
+        const users = await res.json();
+        setSearchResults(users);
+      } else {
+        setSearchResults([]);
+      }
     } catch (error) {
-      console.error('Error searching users:', error);
+      setSearchResults([]);
     }
   };
 
@@ -86,6 +84,7 @@ export default function MessagesPage() {
   };
 
   return (
+    <div className={`transition-opacity duration-700 ${fadeIn ? 'opacity-100' : 'opacity-0'}`}>
     <div className="h-[calc(100vh-4rem)] flex flex-col">
       <div className="flex justify-between items-center p-4 border-b" style={{ borderColor: 'var(--secondary)' }}>
         <h1 className="text-2xl font-bold">Messages</h1>
@@ -193,6 +192,7 @@ export default function MessagesPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
