@@ -100,7 +100,7 @@ export default function DashboardLayout({
                         <Menu.Item>
                           {({ active }) => (
                             <Link
-                              href={"/dashboard/profile" || '/'}
+                              href="/dashboard/profile"
                               className={classNames(
                                 active ? 'bg-gray-200' : '',
                                 'block px-4 py-2 text-sm text-gray-700 hover:text-gray-900'
@@ -113,7 +113,7 @@ export default function DashboardLayout({
                         <Menu.Item>
                           {({ active }) => (
                             <Link
-                              href={"/dashboard/settings" || '/'}
+                              href="/dashboard/settings"
                               className={classNames(
                                 active ? 'bg-gray-200' : '',
                                 'block px-4 py-2 text-sm text-gray-700 hover:text-gray-900'
@@ -171,13 +171,13 @@ export default function DashboardLayout({
                 <div className="mt-3 space-y-1 px-2">
                   {/* Mobile Profile and Sign out links */}
                    <Link
-                      href={"/dashboard/profile" || '/'}
+                      href="/dashboard/profile"
                       className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100 hover:text-gray-800"
                    >
                      My Profile
                    </Link>
                     <Link
-                      href={"/dashboard/settings" || '/'}
+                      href="/dashboard/settings"
                       className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100 hover:text-gray-800"
                     >
                       Settings
