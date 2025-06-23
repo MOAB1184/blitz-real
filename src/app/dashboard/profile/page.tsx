@@ -317,98 +317,98 @@ export default function ProfilePage() {
 
                     {/* Only show website/Instagram buttons if set */}
                     {(profile?.website || (profile?.socialMedia && profile.socialMedia.instagram)) && (
-                      <div className="space-y-4">
-                        <div className="flex justify-center space-x-3">
+                    <div className="space-y-4">
+                      <div className="flex justify-center space-x-3">
                           {profile?.website && (
-                            <a
+                        <a
                               href={`https://${profile.website}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium hover:bg-opacity-90 text-gray-900"
-                              style={{ backgroundColor: '#ffd97a' }}
-                            >
-                              <GlobeAltIcon className="h-4 w-4 mr-2" />
-                              Website
-                            </a>
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium hover:bg-opacity-90 text-gray-900"
+                          style={{ backgroundColor: '#ffd97a' }}
+                        >
+                          <GlobeAltIcon className="h-4 w-4 mr-2" />
+                          Website
+                        </a>
                           )}
                           {profile?.socialMedia && profile.socialMedia.instagram && (
-                            <a
+                        <a
                               href={`https://instagram.com/${profile.socialMedia.instagram.replace('@', '')}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium hover:bg-opacity-90 text-gray-900"
-                              style={{ backgroundColor: '#ffd97a' }}
-                            >
-                              <LinkIcon className="h-4 w-4 mr-2" />
-                              Instagram
-                            </a>
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium hover:bg-opacity-90 text-gray-900"
+                          style={{ backgroundColor: '#ffd97a' }}
+                        >
+                          <LinkIcon className="h-4 w-4 mr-2" />
+                          Instagram
+                        </a>
                           )}
                         </div>
                       </div>
                     )}
 
-                    <div className="border-t border-gray-200 pt-4">
-                      <div className="flex justify-between items-center mb-3">
-                        <h3 className="text-lg font-medium text-gray-900">Sponsorship Preferences</h3>
-                        {!editPrefs && (
-                          <button onClick={() => setEditPrefs(true)} className="text-gray-500 hover:text-[#ffb600]">
-                            <PencilIcon className="h-5 w-5" />
-                          </button>
-                        )}
-                      </div>
-                      {/* Budget Range */}
-                      <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Budget Range</label>
-                        {editPrefs ? (
-                          <div className="flex gap-2 items-center">
-                            <input type="number" value={prefsForm.budgetMin} min={0} onChange={e => handlePrefsChange('budgetMin', Number(e.target.value))} className="form-input w-20" />
-                            <span>-</span>
-                            <input type="number" value={prefsForm.budgetMax} min={prefsForm.budgetMin} onChange={e => handlePrefsChange('budgetMax', Number(e.target.value))} className="form-input w-20" />
-                          </div>
-                        ) : (
-                          <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-gray-900" style={{ backgroundColor: '#ffd97a' }}>
-                            {profile?.budgetRange && typeof profile.budgetRange.min === 'number' && typeof profile.budgetRange.max === 'number'
-                              ? `$${profile.budgetRange.min} - $${profile.budgetRange.max}`
-                              : ''}
-                          </span>
-                        )}
-                      </div>
-                      {/* Preferred Platforms */}
-                      <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Preferred Platforms</label>
-                        {editPrefs ? (
+                      <div className="border-t border-gray-200 pt-4">
+                        <div className="flex justify-between items-center mb-3">
+                          <h3 className="text-lg font-medium text-gray-900">Sponsorship Preferences</h3>
+                          {!editPrefs && (
+                            <button onClick={() => setEditPrefs(true)} className="text-gray-500 hover:text-[#ffb600]">
+                              <PencilIcon className="h-5 w-5" />
+                            </button>
+                          )}
+                        </div>
+                        {/* Budget Range */}
+                        <div className="mb-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Budget Range</label>
+                          {editPrefs ? (
+                            <div className="flex gap-2 items-center">
+                              <input type="number" value={prefsForm.budgetMin} min={0} onChange={e => handlePrefsChange('budgetMin', Number(e.target.value))} className="form-input w-20" />
+                              <span>-</span>
+                              <input type="number" value={prefsForm.budgetMax} min={prefsForm.budgetMin} onChange={e => handlePrefsChange('budgetMax', Number(e.target.value))} className="form-input w-20" />
+                            </div>
+                          ) : (
+                            <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-gray-900" style={{ backgroundColor: '#ffd97a' }}>
+                              {profile?.budgetRange && typeof profile.budgetRange.min === 'number' && typeof profile.budgetRange.max === 'number'
+                                ? `$${profile.budgetRange.min} - $${profile.budgetRange.max}`
+                                : ''}
+                            </span>
+                          )}
+                        </div>
+                        {/* Preferred Platforms */}
+                        <div className="mb-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Preferred Platforms</label>
+                          {editPrefs ? (
+                            <div className="flex flex-wrap gap-2">
+                              {["Instagram", "TikTok", "YouTube", "Live Events", "Twitch", "Other"].map(platform => (
+                                <button
+                                  key={platform}
+                                  type="button"
+                                  onClick={() => handlePrefsPlatformToggle(platform)}
+                                  className={`px-3 py-1 rounded-full text-sm font-medium border ${prefsForm.preferredPlatforms.includes(platform) ? 'bg-[#ffd97a] border-[#ffb600] text-gray-900' : 'bg-white border-gray-300 text-gray-500'}`}
+                                >
+                                  {platform}
+                                </button>
+                              ))}
+                            </div>
+                          ) : (
                           <div className="flex flex-wrap gap-2">
-                            {["Instagram", "TikTok", "YouTube", "Live Events", "Twitch", "Other"].map(platform => (
-                              <button
+                              {(profile?.preferredPlatforms || []).map((platform: string) => (
+                              <span
                                 key={platform}
-                                type="button"
-                                onClick={() => handlePrefsPlatformToggle(platform)}
-                                className={`px-3 py-1 rounded-full text-sm font-medium border ${prefsForm.preferredPlatforms.includes(platform) ? 'bg-[#ffd97a] border-[#ffb600] text-gray-900' : 'bg-white border-gray-300 text-gray-500'}`}
+                                className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-gray-900"
+                                style={{ backgroundColor: '#ffd97a' }}
                               >
                                 {platform}
-                              </button>
+                              </span>
                             ))}
                           </div>
-                        ) : (
-                        <div className="flex flex-wrap gap-2">
-                            {(profile?.preferredPlatforms || []).map((platform: string) => (
-                            <span
-                              key={platform}
-                              className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-gray-900"
-                              style={{ backgroundColor: '#ffd97a' }}
-                            >
-                              {platform}
-                            </span>
-                          ))}
+                          )}
                         </div>
+                        {editPrefs && (
+                          <div className="flex gap-2 mt-2">
+                            <button onClick={handlePrefsSave} className="btn-primary">Save</button>
+                            <button onClick={() => setEditPrefs(false)} className="btn-secondary">Cancel</button>
+                          </div>
                         )}
-                      </div>
-                      {editPrefs && (
-                        <div className="flex gap-2 mt-2">
-                          <button onClick={handlePrefsSave} className="btn-primary">Save</button>
-                          <button onClick={() => setEditPrefs(false)} className="btn-secondary">Cancel</button>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -471,37 +471,37 @@ export default function ProfilePage() {
                           </button>
                         </div>
                       ) : (
-                        <div className="overflow-x-auto">
-                          {filteredListings.map(listing => (
-                            <div key={listing.id} className="bg-white rounded-lg shadow-sm p-4">
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <h3 className="text-lg font-semibold text-gray-900">{listing.title}</h3>
-                                  <p className="text-gray-500">Budget: ${listing.budget}</p>
-                                </div>
-                                <span className={`px-2 py-1 rounded-full text-sm ${
-                                  listing.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
-                                  listing.status === 'DRAFT' ? 'bg-yellow-100 text-yellow-800' :
-                                  'bg-gray-100 text-gray-800'
-                                }`}>
-                                  {listing.status}
-                                </span>
+                      <div className="overflow-x-auto">
+                        {filteredListings.map(listing => (
+                          <div key={listing.id} className="bg-white rounded-lg shadow-sm p-4">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h3 className="text-lg font-semibold text-gray-900">{listing.title}</h3>
+                                <p className="text-gray-500">Budget: ${listing.budget}</p>
                               </div>
-                              <div className="mt-4 flex justify-between items-center">
-                                <div className="text-sm text-gray-500">
+                              <span className={`px-2 py-1 rounded-full text-sm ${
+                                listing.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
+                                listing.status === 'DRAFT' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {listing.status}
+                              </span>
+                            </div>
+                            <div className="mt-4 flex justify-between items-center">
+                              <div className="text-sm text-gray-500">
                                     {/* Only show the number of applications, not the object itself */}
                                     {Array.isArray(listing.applications) ? `${listing.applications.length} applications` : `${listing.applications} applications`}
-                                </div>
-                                <button
-                                  onClick={() => router.push(`/dashboard/my-listings/${listing.id}`)}
-                                  className="text-blue-600 hover:text-blue-800"
-                                >
-                                  View Details
-                                </button>
                               </div>
+                              <button
+                                onClick={() => router.push(`/dashboard/my-listings/${listing.id}`)}
+                                className="text-blue-600 hover:text-blue-800"
+                              >
+                                View Details
+                              </button>
                             </div>
-                          ))}
-                        </div>
+                          </div>
+                        ))}
+                      </div>
                       )}
                     </div>
                   )}

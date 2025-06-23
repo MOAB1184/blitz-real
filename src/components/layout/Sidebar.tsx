@@ -130,12 +130,12 @@ export default function Sidebar() {
                   aria-hidden="true"
                 />
                 {!collapsed && (
-                  <div className="flex flex-col">
-                    <span className="text-gray-400">{item.name}</span>
-                    {item.comingSoon && (
-                      <span className="text-xs text-gray-400">Coming Soon</span>
-                    )}
-                  </div>
+                <div className="flex flex-col">
+                  <span className="text-gray-400">{item.name}</span>
+                  {item.comingSoon && (
+                    <span className="text-xs text-gray-400">Coming Soon</span>
+                  )}
+                </div>
                 )}
               </span>
             ) : (
@@ -154,12 +154,12 @@ export default function Sidebar() {
                   aria-hidden="true"
                 />
                 {!collapsed && (
-                  <div className="flex flex-col">
-                    <span className={item.disabled ? 'text-gray-400' : 'text-gray-900'}>{item.name}</span>
-                    {item.comingSoon && (
-                      <span className="text-xs text-gray-400">Coming Soon</span>
-                    )}
-                  </div>
+                <div className="flex flex-col">
+                  <span className={item.disabled ? 'text-gray-400' : 'text-gray-900'}>{item.name}</span>
+                  {item.comingSoon && (
+                    <span className="text-xs text-gray-400">Coming Soon</span>
+                  )}
+                </div>
                 )}
               </Link>
             )}
