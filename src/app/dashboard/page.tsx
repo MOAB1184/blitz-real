@@ -38,9 +38,19 @@ export default function DashboardPage() {
         if (!hasBusinessName || !hasIndustry) {
           router.replace('/dashboard/onboarding/profile');
         }
-      } else {
-        if (!profile.bio || !profile.niche) {
-          router.replace('/dashboard/onboarding/creator');
+      } else if (session.user.role === 'CREATOR') {
+        // Check if creator has completed basic profile setup
+        const hasBio = !!profile.bio;
+        const hasSocialLinks = profile.socialLinks && (
+          profile.socialLinks.instagram || 
+          profile.socialLinks.tiktok || 
+          profile.socialLinks.youtube || 
+          profile.socialLinks.twitter || 
+          profile.socialLinks.linkedin
+        );
+        console.log('Creator check:', { hasBio, hasSocialLinks });
+        if (!hasBio || !hasSocialLinks) {
+          router.replace('/register/setup');
         }
       }
     }

@@ -11,6 +11,7 @@ export default function RegisterPage() {
     password: '',
     confirmPassword: '',
     name: '',
+    role: 'creator',
   })
   const [error, setError] = useState('')
 
@@ -34,17 +35,32 @@ export default function RegisterPage() {
     }
 
     try {
-      // For testing, we'll use hardcoded credentials
-      if (formData.email === 'test@example.com') {
-        setError('Email already exists')
-        return
+      // Register the user
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          name: formData.name,
+          role: formData.role,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Registration failed')
       }
 
-      // Normally this would be an API call to create the user
-      // For now, we'll just redirect to setup
-      router.push('/register/setup')
-    } catch (err) {
-      setError('Registration failed. Please try again.')
+      // Redirect based on user type
+      if (formData.role === 'creator') {
+        router.push('/register/setup')
+      } else {
+        router.push('/dashboard/onboarding/profile')
+      }
+    } catch (err: any) {
+      setError(err.message || 'Registration failed. Please try again.')
     }
   }
 
@@ -97,6 +113,25 @@ export default function RegisterPage() {
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="role" className="block text-sm font-medium text-gray-700">
+                I am a
+              </label>
+              <div className="mt-1">
+                <select
+                  id="role"
+                  name="role"
+                  required
+                  value={formData.role}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                >
+                  <option value="creator">Creator (Looking for sponsorships)</option>
+                  <option value="sponsor">Sponsor (Looking to sponsor others)</option>
+                </select>
               </div>
             </div>
 
