@@ -8,11 +8,6 @@ const steps = [
   "bio",
   "niche",
   "platforms",
-  "audience",
-  "engagement",
-  "collaborations",
-  "samples",
-  "rates",
 ];
 
 export default function CreatorOnboardingPage() {
@@ -22,11 +17,6 @@ export default function CreatorOnboardingPage() {
     bio: "",
     niche: "",
     platforms: "",
-    audience: "",
-    engagement: "",
-    collaborations: "",
-    samples: "",
-    rates: "",
   });
   const [step, setStep] = useState(0);
   const [animating, setAnimating] = useState(false);
@@ -47,6 +37,7 @@ export default function CreatorOnboardingPage() {
       setAnimating(false);
     }, 350);
   }
+  
   function prevStep() {
     setAnimating(true);
     setTimeout(() => {
@@ -57,23 +48,30 @@ export default function CreatorOnboardingPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // Send form data to backend
-    await fetch('/api/auth/profile', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        bio: form.bio,
-        niche: form.niche,
-        platforms: form.platforms,
-        audience: form.audience,
-        engagement: form.engagement,
-        collaborations: form.collaborations,
-        samples: form.samples,
-        rates: form.rates
-      }),
-    });
-    setSuccess(true);
-    setTimeout(() => router.push("/dashboard"), 1200);
+    
+    try {
+      // Send form data to backend
+      const response = await fetch('/api/auth/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bio: form.bio,
+          socialLinks: {
+            niche: form.niche,
+            platforms: form.platforms
+          }
+        }),
+      });
+
+      if (response.ok) {
+        setSuccess(true);
+        setTimeout(() => router.push("/dashboard"), 1200);
+      } else {
+        console.error('Failed to save profile');
+      }
+    } catch (error) {
+      console.error('Error saving profile:', error);
+    }
   }
 
   if (success) {
@@ -99,68 +97,95 @@ export default function CreatorOnboardingPage() {
           <h2 className="text-3xl font-bold tracking-tight text-gray-900">Set Up Your Creator Profile</h2>
           <p className="mt-2 text-lg text-gray-600">Tell us about yourself to help sponsors find you!</p>
         </div>
+        
         <div className="space-y-6">
           {step === 0 && (
             <div>
-              <label className="block text-sm font-medium text-gray-700">Profile Picture</label>
-              <input name="profilePicture" type="file" accept="image/*" className="w-full" onChange={handleChange} />
+              <label className="block text-sm font-medium text-gray-700">Profile Picture (Optional)</label>
+              <input 
+                name="profilePicture" 
+                type="file" 
+                accept="image/*" 
+                className="w-full p-2 border border-gray-300 rounded-md" 
+                onChange={handleChange} 
+              />
+              <p className="mt-1 text-sm text-gray-500">You can add this later in your profile settings</p>
             </div>
           )}
+          
           {step === 1 && (
             <div>
               <label className="block text-sm font-medium text-gray-700">Bio</label>
-              <textarea name="bio" rows={3} className="w-full rounded border-gray-300" placeholder="Tell sponsors about yourself and your content" value={form.bio} onChange={handleChange} required />
+              <textarea 
+                name="bio" 
+                rows={3} 
+                className="w-full rounded border-gray-300 p-2" 
+                placeholder="Tell sponsors about yourself and your content" 
+                value={form.bio} 
+                onChange={handleChange} 
+                required 
+              />
             </div>
           )}
+          
           {step === 2 && (
             <div>
               <label className="block text-sm font-medium text-gray-700">Content Niche / Categories</label>
-              <input name="niche" type="text" className="w-full rounded border-gray-300" placeholder="e.g. Tech, Beauty, Gaming" value={form.niche} onChange={handleChange} required />
+              <input 
+                name="niche" 
+                type="text" 
+                className="w-full rounded border-gray-300 p-2" 
+                placeholder="e.g. Tech, Beauty, Gaming, Fitness" 
+                value={form.niche} 
+                onChange={handleChange} 
+                required 
+              />
             </div>
           )}
+          
           {step === 3 && (
             <div>
-              <label className="block text-sm font-medium text-gray-700">Platform Links</label>
-              <input name="platforms" type="text" className="w-full rounded border-gray-300" placeholder="e.g. YouTube, Instagram, TikTok links" value={form.platforms} onChange={handleChange} required />
-            </div>
-          )}
-          {step === 4 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Audience Size / Demographics</label>
-              <input name="audience" type="text" className="w-full rounded border-gray-300" placeholder="e.g. 50k followers, 60% US, 40% female" value={form.audience} onChange={handleChange} required />
-            </div>
-          )}
-          {step === 5 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Engagement Metrics</label>
-              <input name="engagement" type="text" className="w-full rounded border-gray-300" placeholder="e.g. 5% engagement rate" value={form.engagement} onChange={handleChange} required />
-            </div>
-          )}
-          {step === 6 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Previous Brand Collaborations</label>
-              <input name="collaborations" type="text" className="w-full rounded border-gray-300" placeholder="e.g. Nike, Samsung" value={form.collaborations} onChange={handleChange} />
-            </div>
-          )}
-          {step === 7 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Content Samples</label>
-              <input name="samples" type="text" className="w-full rounded border-gray-300" placeholder="Links to your best work" value={form.samples} onChange={handleChange} />
-            </div>
-          )}
-          {step === 8 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Rate Card / Pricing</label>
-              <input name="rates" type="text" className="w-full rounded border-gray-300" placeholder="e.g. $500 per video" value={form.rates} onChange={handleChange} />
+              <label className="block text-sm font-medium text-gray-700">Platform Links (Optional)</label>
+              <input 
+                name="platforms" 
+                type="text" 
+                className="w-full rounded border-gray-300 p-2" 
+                placeholder="e.g. YouTube, Instagram, TikTok links" 
+                value={form.platforms} 
+                onChange={handleChange} 
+              />
+              <p className="mt-1 text-sm text-gray-500">You can add these later in your profile settings</p>
             </div>
           )}
         </div>
+        
         <div className="flex justify-between mt-8">
-          <button type="button" onClick={prevStep} disabled={step === 0} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-warm-dark">Back</button>
+          <button 
+            type="button" 
+            onClick={prevStep} 
+            disabled={step === 0} 
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-warm-dark disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Back
+          </button>
+          
           {step < steps.length - 1 ? (
-            <button type="button" onClick={nextStep} className="px-4 py-2 text-sm font-medium text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-warm-dark" style={{ backgroundColor: 'var(--primary)' }}>Next</button>
+            <button 
+              type="button" 
+              onClick={nextStep} 
+              className="px-4 py-2 text-sm font-medium text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-warm-dark" 
+              style={{ backgroundColor: 'var(--primary)' }}
+            >
+              Next
+            </button>
           ) : (
-            <button type="submit" className="px-4 py-2 text-sm font-medium text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-warm-dark" style={{ backgroundColor: 'var(--primary)' }}>Finish</button>
+            <button 
+              type="submit" 
+              className="px-4 py-2 text-sm font-medium text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-warm-dark" 
+              style={{ backgroundColor: 'var(--primary)' }}
+            >
+              Finish
+            </button>
           )}
         </div>
       </form>
